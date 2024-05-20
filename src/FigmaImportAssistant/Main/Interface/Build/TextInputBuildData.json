@@ -1,0 +1,47 @@
+[
+    {
+        "PositionX" : {
+            "PlaceholderText": "X Pos",
+            "Type": "number"
+        },
+
+        "PositionY" : {
+            "PlaceholderText": "Y Pos",
+            "Type": "number"
+        }
+    },
+
+    {
+        "SizeX" : {
+            "PlaceholderText": "Width",
+            "Type": "number"
+        },
+
+        "SizeY" : {
+            "PlaceholderText": "Height",
+            "Type": "number"
+        }
+    },
+    
+    {
+        "StrokeThickness" : {
+            "PlaceholderText": "Stroke",
+            "Type": "number"
+        },
+
+        "ObliqueShadowSize" : {
+            "PlaceholderText": "Oblique Size",
+            "Type": "number"
+        }
+    },
+
+    {
+        "Name" : {
+            "PlaceholderText": "Name"
+        },
+
+        "Image" : {
+            "PlaceholderText": "Image"
+        }
+    }
+]

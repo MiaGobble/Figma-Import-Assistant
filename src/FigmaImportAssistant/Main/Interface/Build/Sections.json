@@ -1,0 +1,19 @@
+[
+    {
+        "Name" : "Figma Properties",
+        "Build" : ["TextInputSections"],
+        "Collapsed" : false
+    },
+
+    {
+        "Name" : "Instance Building",
+        "Build" : ["CreationButtons"],
+        "Collapsed" : true
+    },
+
+    {
+        "Name" : "Alignment",
+        "Build" : ["AlignmentInputs"],
+        "Collapsed" : true
+    }
+]

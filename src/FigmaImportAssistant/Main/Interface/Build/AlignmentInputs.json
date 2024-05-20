@@ -1,0 +1,13 @@
+[
+    {
+        "AnchorX" : {
+            "PlaceholderText": "Anchor X",
+            "Type": "number"
+        },
+
+        "AnchorY" : {
+            "PlaceholderText": "Anchor Y",
+            "Type": "number"
+        }
+    }
+]

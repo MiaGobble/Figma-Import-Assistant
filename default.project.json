@@ -1,0 +1,23 @@
+{
+  "name": "Slap-Battles-Plugins",
+  
+  "tree": {
+    "$className": "DataModel",
+
+    "ServerStorage": {
+      "Plugins": {
+        "$className": "Folder",
+
+        "FigmaImportAssistant": {
+          "$className": "Folder",
+          "$path": "src/FigmaImportAssistant",
+
+          "Packages" : {
+            "$className": "Folder",
+            "$path": "Packages"
+          }
+        }
+      }
+    }
+  }
+}

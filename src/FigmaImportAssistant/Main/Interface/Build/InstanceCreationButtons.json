@@ -1,0 +1,69 @@
+[
+    {
+        "ClassName" : "ImageLabel",
+        "Properties" : {
+            "Image" : "rbxassetid://0",
+            "BackgroundTransparency" : 1,
+            "Size": [1, 0, 1, 0]
+        }
+    },
+
+    {
+        "ClassName" : "ImageButton",
+        "Properties" : {
+            "Image" : "rbxassetid://0",
+            "BackgroundTransparency" : 1,
+            "Size": [1, 0, 1, 0]
+        }
+    },
+
+    {
+        "ClassName" : "TextLabel",
+        "Properties" : {
+            "Text" : "TextLabel",
+            "TextColor3" : [255, 255, 255],
+            "BackgroundTransparency" : 1,
+            "Size": [1, 0, 1, 0]
+        }
+    },
+
+    {
+        "ClassName" : "TextButton",
+        "Properties" : {
+            "Text" : "TextButton",
+            "TextColor3" : [255, 255, 255],
+            "BackgroundTransparency" : 1,
+            "Size": [1, 0, 1, 0]
+        }
+    },
+
+    {
+        "ClassName" : "TextBox",
+        "Properties" : {
+            "TextColor3" : [255, 255, 255],
+            "BackgroundTransparency" : 1,
+            "Size": [1, 0, 1, 0]
+        }
+    },
+
+    {
+        "ClassName" : "Frame",
+        "Properties" : {
+            "BackgroundTransparency" : 1,
+            "Size": [1, 0, 1, 0]
+        }
+    },
+
+    {
+        "ClassName" : "ScrollingFrame",
+        "Properties" : {
+            "BackgroundTransparency" : 1,
+            "Size": [1, 0, 1, 0]
+        }
+    },
+
+    {
+        "ClassName": "UICorner",
+        "Properties": {}
+    }
+]
