@@ -55,6 +55,24 @@ function BuildTypes.CreationButtons(SectionFrame)
             Parent = SectionFrame
         }
     end
+end
+
+function BuildTypes.TextInputSections(SectionFrame)
+    for _, Data in ipairs(TEXT_INPUT_BUILD_DATA) do
+        Hydrate(CreateTextInputSection(Data)) {
+            Parent = SectionFrame,
+        }
+    end
+
+    -- for Index, InputBox in Inputs do
+    --     if Index ~= "Name" and Index ~= "Image" then
+    --         Hydrate(InputBox) {
+    --             Visible = Computed(function()
+    --                 return SelectedItem:get() ~= nil and not SelectedItem:get():IsA("ScreenGui")
+    --             end)
+    --         }
+    --     end
+    -- end
 
     Hydrate(Inputs["Image"]) {
         Visible = Computed(function()
@@ -65,14 +83,6 @@ function BuildTypes.CreationButtons(SectionFrame)
             return Success
         end)
     }
-end
-
-function BuildTypes.TextInputSections(SectionFrame)
-    for _, Data in ipairs(TEXT_INPUT_BUILD_DATA) do
-        Hydrate(CreateTextInputSection(Data)) {
-            Parent = SectionFrame
-        }
-    end
 end
 
 function BuildTypes.AlignmentInputs(SectionFrame)
