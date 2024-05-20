@@ -163,20 +163,7 @@ local function BuildInterface()
 		},
 
         CanvasScaleConstraint = Enum.ScrollingDirection.X,
-        -- VerticalScrollBarInset = 0,
-        -- ScrollBarThickness = 5,
-        -- VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right,
-        -- ScrollingEnabled = true,
-        -- CanvasSize = UDim2.new(0, 0, 0, 0),
-        -- ScrollBarBorderMode = Enum.BorderMode.Inset,
         ZIndex = 1,
-
-        -- ScrollBarBorderMode:  types.CanBeState<Enum.BorderMode>?,
-        -- CanvasSize: types.CanBeState<UDim2>?,
-        -- ScrollingEnabled: types.CanBeState<boolean>?,
-        -- ScrollBarThickness: types.CanBeState<number>?,
-        -- VerticalScrollBarPosition: types.CanBeState<Enum.VerticalScrollBarPosition>?,
-        -- VerticalScrollBarInset: types.CanBeState<Enum.ScrollBarInset>?,
 		
 		Parent = Widget,
 	}).Canvas
