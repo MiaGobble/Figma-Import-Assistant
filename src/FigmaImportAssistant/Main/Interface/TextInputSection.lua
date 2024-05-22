@@ -33,7 +33,7 @@ return function(MainContentList, IsItemSelected, Inputs, SectionBuildData)
 
     local SectionFrame = Hydrate(BuildSectionFrame(MainContentList)) {
         Visible = Computed(function()
-            if Selected:get() and (not Selected:get():IsA("ScreenGui") or SectionBuildData.Name) then
+            if IsItemSelected:get() and Selected:get() and (not Selected:get():IsA("ScreenGui") or (SectionBuildData.Name or SectionBuildData.SizeX or SectionBuildData.SizeY)) then
                 return true
             else
                 return false
@@ -48,7 +48,7 @@ return function(MainContentList, IsItemSelected, Inputs, SectionBuildData)
 
         local Input; Input = Component "TextInput" {
             Enabled = Computed(function()
-                return Selected:get() and (not Selected:get():IsA("ScreenGui") or Name == "Name")
+                return IsItemSelected:get() and Selected:get() and (not Selected:get():IsA("ScreenGui") or (Name == "Name" or Name == "SizeX" or Name == "SizeY"))
             end),
             Name = Name,
             PlaceholderText = Data.PlaceholderText or Name,

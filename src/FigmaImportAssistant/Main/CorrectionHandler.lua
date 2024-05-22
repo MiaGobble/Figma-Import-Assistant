@@ -14,14 +14,17 @@ local SelectedInstance = nil
 function CorrectionHandler:Init()
     Interface:OnApply(function(Data)
         if SelectedInstance then
+            local Size = Vector2.new(Data.Size.X, Data.Size.Y)
+            local Position = Vector2.new(Data.Position.X, Data.Position.Y)
+
             if SelectedInstance:IsA("ScreenGui") then
+                SelectedInstance:SetAttribute("FigmaSize", Size)
+                SelectedInstance:SetAttribute("FigmaPosition", Position)
                 SelectedInstance.Name = Data.Name
                 return
             end
-
-            local Size = Vector2.new(Data.Size.X, Data.Size.Y)
-            local Position = Vector2.new(Data.Position.X, Data.Position.Y)
-            local AnchorPoint = Vector2.new(Data.AnchorPoint.X, Data.AnchorPoint.Y)
+            
+            local AnchorPoint = Vector2.new(Data.AnchorPoint.X or 0, Data.AnchorPoint.Y or 0)
             local Stroke = Data.Stroke
             local Oblique = Data.Oblique
             local CorrectedSize = Size + Vector2.new(Stroke * 2, Stroke * 2) + Vector2.new(0, Oblique)
@@ -46,7 +49,7 @@ function CorrectionHandler:Init()
 
             local ScaledSize = Utility.ConvertToContextualScale(SelectedInstance, FinalSize)
             local ScaledPosition = Utility.ConvertToContextualScale(SelectedInstance, FinalPosition)
-
+            
             ScaledPosition += UDim2.fromScale(ScaledSize.X.Scale * AnchorPoint.X, ScaledSize.Y.Scale * AnchorPoint.Y)
         
             if SelectedInstance:FindFirstChildOfClass("UIAspectRatioConstraint") then
