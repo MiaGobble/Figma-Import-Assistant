@@ -1,0 +1,10 @@
+{
+  "name": "Figma to Roblox test 2",
+  "id": "1147666983388927669",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": [
+    "figma"
+  ],
+  "ui": "ui.html"
+}

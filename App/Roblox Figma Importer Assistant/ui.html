@@ -1,0 +1,41 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/figma-plugin-ds.css">
+
+<style>
+  body {
+    padding: 2em;
+  }
+  div {
+    margin: 1em;
+  }
+  input {
+    display: block;
+  }
+</style>
+
+<div>
+  <label for="CodeTitle">Select what you want to convert and then press "Generate Code"</label>
+</div>
+
+<div>
+  <button class = "button button--primary" id="Generate">Generate Code</button>
+</div>
+
+<div>
+  <label for="CodeTitle2">Generated Code:</label>
+  <input type="text" rows="2" value = "" id ="Code">
+</div>
+<div>
+  <label for="CodeDesc">After doing so, copy and paste the Generated Code onto the Roblox plugin.</label>
+</div>
+
+<script>
+  const CodeText = document.getElementById('Code')
+  document.getElementById('Generate').onclick = () => {
+    parent.postMessage({
+      pluginMessage: 'Run'
+    }, '*')
+  }
+onmessage = (event) => {
+  CodeText.value = event.data.pluginMessage
+}
+</script>
