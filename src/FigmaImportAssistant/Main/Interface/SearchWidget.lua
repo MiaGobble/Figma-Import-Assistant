@@ -56,7 +56,7 @@ function SearchWidget:Build()
         Parent = MainContent,
     } :: TextBox
 
-    task.defer(function() -- Fixes weird behavior
+    task.delay(0.5, function() -- Fixes weird behavior
         Widget.Enabled = false
     end)
 
