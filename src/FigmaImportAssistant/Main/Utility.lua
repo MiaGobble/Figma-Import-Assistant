@@ -1,5 +1,7 @@
 local Utility = {}
 
+local Selection = game:GetService("Selection")
+
 function Utility.GetDictionaryLength(Dictionary)
     local Count = 0
     local NextIndex = next(Dictionary)
@@ -44,6 +46,13 @@ function Utility.ApplyImage(ImageLabel : Instance, Image : string)
         Image = Image:gsub("rbxassetid://", "")
         ImageLabel.Image = "rbxassetid://" .. Image
     end)
+end
+
+function Utility.GetSelectedItem()
+    local Selected = Selection:Get()
+    local SelectedItem = Selected[1]
+
+    return SelectedItem
 end
 
 return Utility
