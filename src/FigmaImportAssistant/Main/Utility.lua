@@ -26,18 +26,8 @@ function Utility.GetParentProperties(Parent)
     end
 
     if Parent:GetAttribute("FigmaPosition") then
-        --Position = Parent:GetAttribute("FigmaPosition")
+        Position = Parent:GetAttribute("FigmaPosition")
     end
-
-    -- if Parent.Parent:GetAttribute("FigmaStrokeThickness") then
-    --     Size -= Vector2.new(Parent.Parent:GetAttribute("FigmaStrokeThickness"), Parent.Parent:GetAttribute("FigmaStrokeThickness")) * 2
-    --     --Position += Vector2.new(Parent:GetAttribute("FigmaStrokeThickness"), Parent:GetAttribute("FigmaStrokeThickness"))
-    -- end
-
-    -- if Parent.Parent:GetAttribute("FigmaObliqueSize") then
-    --     Size -= Vector2.new(0, Parent:GetAttribute("FigmaObliqueSize"))
-    --     --Position += Vector2.new(0, Parent:GetAttribute("FigmaObliqueSize"))
-    -- end
 
     return Size, Position
 end
