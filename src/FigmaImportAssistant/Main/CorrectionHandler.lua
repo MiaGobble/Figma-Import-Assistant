@@ -17,6 +17,8 @@ function CorrectionHandler:Init()
             local Size = Vector2.new(Data.Size.X, Data.Size.Y)
             local Position = Vector2.new(Data.Position.X, Data.Position.Y)
 
+            Utility.CreateUndoMarkerStart()
+
             if SelectedInstance:IsA("ScreenGui") then
                 SelectedInstance:SetAttribute("FigmaSize", Size)
                 SelectedInstance:SetAttribute("FigmaPosition", Position)
@@ -71,6 +73,8 @@ function CorrectionHandler:Init()
 
             SelectedInstance:SetAttribute("FigmaStrokeThickness", Stroke)
             SelectedInstance:SetAttribute("FigmaObliqueSize", Oblique)
+
+            Utility.CreateUndoMarkerEnd()
         end
     end)
 

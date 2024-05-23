@@ -1,6 +1,7 @@
 local Utility = {}
 
 local Selection = game:GetService("Selection")
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
 function Utility.GetDictionaryLength(Dictionary)
     local Count = 0
@@ -53,6 +54,14 @@ function Utility.GetSelectedItem()
     local SelectedItem = Selected[1]
 
     return SelectedItem
+end
+
+function Utility.CreateUndoMarkerStart()
+    ChangeHistoryService:SetWaypoint("FigmaAssistantMarkerStart")
+end
+
+function Utility.CreateUndoMarkerEnd()
+    ChangeHistoryService:SetWaypoint("FigmaAssistantMarkerEnd")
 end
 
 return Utility

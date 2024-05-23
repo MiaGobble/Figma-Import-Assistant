@@ -3,6 +3,7 @@ local SelectionService = game:GetService("Selection")
 local Packages = script.Parent.Parent.Parent.Packages
 local Component = require(script.Parent.Parent.Component)
 local Keybinds = require(script.Parent.Keybinds)
+local Utility = require(script.Parent.Parent.Utility)
 local Fusion = require(Packages.Fusion)
 local New = Fusion.New
 local Children = Fusion.Children
@@ -20,12 +21,16 @@ return function(Inputs, MainContentList, SelectedItem, IsItemSelected, Data)
 
         [OnEvent "Activated"] = Keybinds:AddKeybind(`c{Data.ClassName}`, {}, function()
             if SelectedItem:get() then
+                Utility.CreateUndoMarkerStart()
+
                 SelectionService:Set({
                     Hydrate(New(Data.ClassName)({
                         Name = Data.ClassName,
                         Parent = SelectedItem:get()
                     }))(Data.Properties)
                 })
+
+                Utility.CreateUndoMarkerEnd()
             end
         end).Callback
     }
