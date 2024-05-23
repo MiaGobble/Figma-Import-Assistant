@@ -75,8 +75,10 @@ figma.ui.onmessage = msg => {
         console.log(FigmaExportData)
         figma.ui.postMessage(FigmaExportData)
 
+        // /copyToClipboardAsync(FigmaExportData);
+
         return FigmaExportData
     }
-    
+
     // figma.closePlugin();
 };
