@@ -26,7 +26,7 @@ figma.ui.onmessage = msg => {
     let FigmaExportData = [];
 
     function ReadNode(node) {
-        if ("opacity" in node) {
+        if ("opacity" in node || "frame" in node) {
             let NodeExportData = {
                 type: node.type,
                 
@@ -38,6 +38,7 @@ figma.ui.onmessage = msg => {
                 x: node.x,
                 y: node.y,
                 strokeWeight: node.strokeWeight,
+                opacity: node.opacity,
                 
                 //rotation: node.rotation,
                 clipsContent: node.clipsContent,

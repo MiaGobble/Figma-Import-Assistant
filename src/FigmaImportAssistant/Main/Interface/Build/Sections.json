@@ -15,5 +15,11 @@
         "Name" : "Alignment",
         "Build" : ["AlignmentInputs"],
         "Collapsed" : true
+    },
+
+    {
+        "Name" : "Auto Import",
+        "Build" : ["ImportInputs"],
+        "Collapsed" : true
     }
 ]

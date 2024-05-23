@@ -1,20 +1,14 @@
-local CorrectionHandler = {}
+local Applicator = {}
 
-local SelectionService = game:GetService("Selection")
-
-local Interface = require(script.Parent.Interface)
-local Utility = require(script.Parent.Utility)
-local Fusion = require(script.Parent.Parent.Packages.Fusion)
+local Packages = script.Parent.Parent.Parent.Packages
+local Fusion = require(Packages.Fusion)
+local Utility = require(script.Parent.Parent.Utility)
 local New = Fusion.New
 local Hydrate = Fusion.Hydrate
 local Children = Fusion.Children
 
-local SelectedInstance = nil
-
-function CorrectionHandler:Init()
-    Interface:OnApply(function(Data)
-        if SelectedInstance then
-            local Size = Vector2.new(Data.Size.X, Data.Size.Y)
+function Applicator:ApplyChangesFromData(SelectedInstance : Instance, Data : {})
+    local Size = Vector2.new(Data.Size.X, Data.Size.Y)
             local Position = Vector2.new(Data.Position.X, Data.Position.Y)
 
             Utility.CreateUndoMarkerStart()
@@ -46,7 +40,6 @@ function CorrectionHandler:Init()
             if SelectedInstance.Parent:GetAttribute("FigmaObliqueSize") then
                 local Oblique = SelectedInstance.Parent:GetAttribute("FigmaObliqueSize") - Oblique
                 FinalSize -= Vector2.new(0, Oblique)
-                --FinalPosition += Vector2.new(0, SelectedInstance.Parent:GetAttribute("FigmaObliqueSize"))
             end
 
             local ScaledSize = Utility.ConvertToContextualScale(SelectedInstance, FinalSize)
@@ -75,25 +68,6 @@ function CorrectionHandler:Init()
             SelectedInstance:SetAttribute("FigmaObliqueSize", Oblique)
 
             Utility.CreateUndoMarkerEnd()
-        end
-    end)
-
-    SelectionService.SelectionChanged:Connect(function()
-        local Selected = SelectionService:Get()
-        local SelectedCount = Utility.GetDictionaryLength(Selected)
-
-        if SelectedCount == 1 then
-            SelectedInstance = Selected[1]
-        else
-            SelectedInstance = nil
-        end
-
-        if SelectedInstance and not SelectedInstance:IsA("GuiObject") and not SelectedInstance:IsA("ScreenGui") then
-            SelectedInstance = nil
-        end
-        
-        Interface:OnSelection(SelectedInstance)
-    end)
 end
 
-return CorrectionHandler
+return Applicator

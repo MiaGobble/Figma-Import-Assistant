@@ -6,14 +6,19 @@ local BUILD_SECTIONS_DATA = require(BUILD_DATA.Sections)
 local TEXT_INPUT_BUILD_DATA = require(BUILD_DATA.TextInputBuildData)
 local INSTANCE_BUTTON_BUILD_DATA = require(BUILD_DATA.InstanceCreationButtons)
 local ALIGNMENT_INPUT_BUILD_DATA = require(BUILD_DATA.AlignmentInputs)
+local IMPORT_INPUT_BUILD_DATA = require(BUILD_DATA.ImportInputs)
 
 -- Imports
 local Packages = script.Parent.Parent.Packages
 local Component = require(script.Parent.Component)
 local SearchWidget = require(script.SearchWidget)
+local Keybinds = require(script.Keybinds)
 local Fusion = require(Packages.Fusion)
 local InstanceCreationButton = require(script.InstanceCreationButton)
 local TextInputSection = require(script.TextInputSection)
+local CorrectionHandler = script.Parent.CorrectionHandler
+local AppImportInterpreter = require(CorrectionHandler.AppImportInterpreter)
+local Creator = require(CorrectionHandler.Creator)
 local New = Fusion.New
 local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
@@ -64,16 +69,6 @@ function BuildTypes.TextInputSections(SectionFrame)
         }
     end
 
-    -- for Index, InputBox in Inputs do
-    --     if Index ~= "Name" and Index ~= "Image" then
-    --         Hydrate(InputBox) {
-    --             Visible = Computed(function()
-    --                 return SelectedItem:get() ~= nil and not SelectedItem:get():IsA("ScreenGui")
-    --             end)
-    --         }
-    --     end
-    -- end
-
     Hydrate(Inputs["Image"]) {
         Visible = Computed(function()
             local Success, _ = pcall(function()
@@ -90,6 +85,42 @@ function BuildTypes.AlignmentInputs(SectionFrame)
         Hydrate(CreateTextInputSection(Data)) {
             Parent = SectionFrame
         }
+    end
+end
+
+function BuildTypes.ImportInputs(SectionFrame)
+    for Index, Data in IMPORT_INPUT_BUILD_DATA do
+        if Data.Type == "BaseButton" then
+            Inputs[Data.Name] = Component "Button" {
+                Enabled = IsItemSelected,
+                Name = Data.Name,
+                Text = Data.Text,
+                LayoutOrder = 1,
+                Size = UDim2.new(1, 0, 0, 30),
+                Parent = SectionFrame,
+                Visible = IsItemSelected,
+        
+                [OnEvent "Activated"] = Keybinds:AddKeybind(`ipt`, {}, function()
+                    if SelectedItem:get() and Inputs["AutoImportData"].Text ~= "" then
+                        local ImportDataJSON = Inputs["AutoImportData"].Text
+                        
+                        local InterpretedData = AppImportInterpreter:InterpretJSONData(ImportDataJSON)
+
+                        if InterpretedData then
+                            Creator:CreateFromData(SelectedItem:get(), InterpretedData)
+                        end
+
+                        Inputs["AutoImportData"].Text = ""
+                    end
+                end).Callback
+            }
+        else
+            Hydrate(CreateTextInputSection({[Index] = Data})) {
+                LayoutOrder = 0,
+                Parent = SectionFrame,
+                Visible = IsItemSelected,
+            }
+        end
     end
 end
 

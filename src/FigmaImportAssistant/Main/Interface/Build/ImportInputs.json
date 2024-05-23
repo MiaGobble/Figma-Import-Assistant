@@ -1,0 +1,12 @@
+{
+    "AutoImportData" : {
+        "PlaceholderText": "Import Data",
+        "Type": "string"
+    },
+
+    "AutoImportButton" : {
+        "Text": "Auto Import",
+        "Name": "AutoImportButton",
+        "Type": "BaseButton"
+    }
+}
