@@ -62,7 +62,7 @@ function AppImportInterpreter:InterpretJSONData(JSONData : string)
 end
 
 function AppImportInterpreter:GetActionsFromName(Name : string)
-    local RawTags = string.split(Name:upper(), "@")
+    local RawTags = string.split(Name, "@")
     local Name = RawTags[1]
     local Actions = {}
 

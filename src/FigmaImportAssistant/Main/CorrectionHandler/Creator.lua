@@ -21,7 +21,7 @@ local function CreateRecursive(Parent, Data : {})
         Object.ClipsDescendants = Child.clipsContent or true
         Object.BackgroundTransparency = 1
         Object.Parent = Parent
-        Data.Name = Name
+        Child.Name = Name
 
         Applicator:ApplyChangesFromData(Object, Child)
 
