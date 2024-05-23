@@ -25,43 +25,45 @@ figma.ui.onmessage = msg => {
     const currentPage = figma.currentPage;
     let FigmaExportData = [];
 
-    function Check(node) {
+    function ReadNode(node) {
         if ("opacity" in node) {
             let NodeExportData = {
                 type: node.type,
                 
                 name: node.name,
-                visible: node.visible,
+                //visible: node.visible,
                 
                 width: node.width,
                 height: node.height,
                 x: node.x,
                 y: node.y,
-                
-                rotation: node.rotation,
-                clipsContent: node.clipsContent,
-                fills: node.fills,
-                cornerRadius: node.cornerRadius,
                 strokeWeight: node.strokeWeight,
-                strokes: node.strokes,
+                
+                //rotation: node.rotation,
+                clipsContent: node.clipsContent,
+                // fills: node.fills,
+                // cornerRadius: node.cornerRadius,
+                // strokeWeight: node.strokeWeight,
+                // strokes: node.strokes,
                 
                 children: []
             }
 
-            if (node.type == "TEXT") {
-                NodeExportData.textAlignHorizontal = node.textAlignHorizontal
-                NodeExportData.textAlignVertical = node.textAlignVertical
-                NodeExportData.textAutoResize = node.textAutoResize
-                NodeExportData.characters = node.characters
-                NodeExportData.fontSize = node.fontSize
-                NodeExportData.fontName = node.fontName
-            }
+            // if (node.type == "TEXT") {
+            //     NodeExportData.textAlignHorizontal = node.textAlignHorizontal
+            //     NodeExportData.textAlignVertical = node.textAlignVertical
+            //     NodeExportData.textAutoResize = node.textAutoResize
+            //     NodeExportData.characters = node.characters
+            //     NodeExportData.fontSize = node.fontSize
+            //     NodeExportData.fontName = node.fontName
+            // }
 
             if ("children" in node){
                 for (const childNode of node.children) {
-                    const AdditionalInformation = Check(childNode)
-                    if (AdditionalInformation) {
-                        NodeExportData.children.push(AdditionalInformation)
+                    const ReturnPackage = ReadNode(childNode)
+
+                    if (ReturnPackage) {
+                        NodeExportData.children.push(ReturnPackage)
                     }
                 }
             }
@@ -72,7 +74,7 @@ figma.ui.onmessage = msg => {
 
     if (msg === 'Run') {
         for (const node of figma.currentPage.selection) {
-            const NodeExportData = Check(node)
+            const NodeExportData = ReadNode(node)
 
             if (NodeExportData) {
                 FigmaExportData.push(NodeExportData)
