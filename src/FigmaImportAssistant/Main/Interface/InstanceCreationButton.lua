@@ -18,7 +18,7 @@ return function(Inputs, MainContentList, SelectedItem, IsItemSelected, Data)
         Size = UDim2.new(1, 0, 0, 30),
         Parent = MainContentList,
 
-        [OnEvent "Activated"] = Keybinds:AddKeybind(`CreateChild{Data.ClassName}`, {}, function()
+        [OnEvent "Activated"] = Keybinds:AddKeybind(`c{Data.ClassName}`, {}, function()
             if SelectedItem:get() then
                 SelectionService:Set({
                     Hydrate(New(Data.ClassName)({
