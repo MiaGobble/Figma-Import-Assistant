@@ -25,7 +25,6 @@ local function RunSearch(SearchTerm)
     end
 
     Keybinds[1]:Run()
-    print("Ran keybind")
 end
 
 function SearchWidget:Build()
