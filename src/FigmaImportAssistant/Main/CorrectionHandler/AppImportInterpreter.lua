@@ -1,5 +1,10 @@
 local AppImportInterpreter = {}
 
+local TAG_ACTIONS = {
+    ["GROUP"] = "BreakAfter",
+    ["IGNORE"] = "Continue"
+}
+
 local HttpService = game:GetService("HttpService")
 
 local function ReadRecursive(ParentTable)
@@ -54,6 +59,20 @@ function AppImportInterpreter:InterpretJSONData(JSONData : string)
     local Interpretation = ReadRecursive(Data)
 
     return Interpretation
+end
+
+function AppImportInterpreter:GetActionsFromName(Name : string)
+    local RawTags = string.split(Name, "@")
+    local Name = RawTags[1]
+    local Actions = {}
+
+    for Index, Tag in ipairs(RawTags) do
+        if Index > 1 and TAG_ACTIONS[Tag] then
+            Actions[TAG_ACTIONS[Tag]] = true
+        end
+    end
+
+    return Actions, Name
 end
 
 return AppImportInterpreter
