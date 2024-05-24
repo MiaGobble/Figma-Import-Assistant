@@ -2,7 +2,11 @@ local AppImportInterpreter = {}
 
 local TAG_ACTIONS = {
     ["GROUP"] = "BreakAfter",
-    ["IGNORE"] = "Continue"
+    ["IGNORE"] = "Continue",
+    ["TYPE_IMAGE"] = "ClassImageLabel",
+    ["TYPE_BUTTON"] = "ClassImageButton",
+    ["TYPE_FRAME"] = "ClassFrame",
+    ["TYPE_SCROLLING_FRAME"] = "ClassScrollingFrame",
 }
 
 local HttpService = game:GetService("HttpService")

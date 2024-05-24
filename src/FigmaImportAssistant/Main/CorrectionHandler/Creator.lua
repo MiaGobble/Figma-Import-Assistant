@@ -17,7 +17,20 @@ local function CreateRecursive(Parent, Data : {})
             continue
         end
 
-        local Object = Instance.new(Child.Type)
+        local Object
+
+        for Action, _ in Actions do
+            if Action:find("Class") then
+                local InstanceType = Action:gsub("Class", "")
+                Object = Instance.new(InstanceType)
+                break
+            end
+        end
+
+        if not Object then
+            Object = Instance.new(Child.Type)
+        end
+
         Object.ClipsDescendants = Child.clipsContent or true
         Object.BackgroundTransparency = 1
         Object.Parent = Parent
