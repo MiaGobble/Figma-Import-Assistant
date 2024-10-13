@@ -31,9 +31,10 @@ local function CreateRecursive(Parent, Data : {})
             Object = Instance.new(Child.Type)
         end
 
-        Object.ClipsDescendants = Child.clipsContent or true
+        Object.ClipsDescendants = if Child.clipsContent ~= nil then Child.clipsContent else true
         Object.BackgroundTransparency = 1
         Object.Parent = Parent
+        Object:SetAttribute("IsFigmaImportGroup", Child.IsGroup)
         Child.Name = Name
 
         Applicator:ApplyChangesFromData(Object, Child)
