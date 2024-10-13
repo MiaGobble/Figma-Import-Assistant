@@ -31,7 +31,7 @@ figma.ui.onmessage = msg => {
                 
                 rotation: node.rotation,
                 clipsContent: node.clipsContent,
-                fills: node.fills,
+                //fills: node.fills,
                 cornerRadius: node.cornerRadius,
                 // strokes: node.strokes,
                 
