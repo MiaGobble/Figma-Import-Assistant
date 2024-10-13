@@ -20,7 +20,7 @@ figma.ui.onmessage = msg => {
                 type: node.type,
                 
                 name: node.name,
-                //visible: node.visible,
+                visible: node.visible,
                 
                 width: node.width,
                 height: node.height,
@@ -29,11 +29,10 @@ figma.ui.onmessage = msg => {
                 strokeWeight: node.strokeWeight,
                 opacity: node.opacity,
                 
-                //rotation: node.rotation,
+                rotation: node.rotation,
                 clipsContent: node.clipsContent,
                 fills: node.fills,
-                // cornerRadius: node.cornerRadius,
-                // strokeWeight: node.strokeWeight,
+                cornerRadius: node.cornerRadius,
                 // strokes: node.strokes,
                 
                 children: []
