@@ -38,6 +38,10 @@ local function ReadRecursive(ParentTable)
             Stroke = Child.strokeWeight or 0,
             Oblique = 0,
             IsGroup = Child.type == "GROUP",
+            Settings = {
+                IsAspectRatioConstrained = true,
+                ClipDescendants = true,
+            },
     
             -- Unique data from import
             Type = if Child.type == "GROUP" then "Frame" elseif Child.opacity == 0 and Child.strokeWeight == 0 then "Frame" else "ImageLabel"
