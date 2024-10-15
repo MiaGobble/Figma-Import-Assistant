@@ -1,0 +1,15 @@
+{
+    "IsAspectRatioConstrained" : {
+        "Text": "Keep Aspect Ratio",
+        "Name": "IsAspectRatioConstrained",
+        "Type": "Boolean",
+        "DefaultValue": true
+    },
+
+    "ClipDescendants" : {
+        "Text": "Clip Descendants",
+        "Name": "ClipDescendants",
+        "Type": "Boolean",
+        "DefaultValue": true
+    }
+}

@@ -7,6 +7,7 @@ local TEXT_INPUT_BUILD_DATA = require(BUILD_DATA.TextInputBuildData)
 local INSTANCE_BUTTON_BUILD_DATA = require(BUILD_DATA.InstanceCreationButtons)
 local ALIGNMENT_INPUT_BUILD_DATA = require(BUILD_DATA.AlignmentInputs)
 local IMPORT_INPUT_BUILD_DATA = require(BUILD_DATA.ImportInputs)
+local BOOLEAN_SETTING_INPUT_BUILD_DATA = require(BUILD_DATA.BooleanSettingInputs)
 
 -- Imports
 local Packages = script.Parent.Parent.Packages
@@ -16,6 +17,7 @@ local Keybinds = require(script.Keybinds)
 local Fusion = require(Packages.Fusion)
 local InstanceCreationButton = require(script.InstanceCreationButton)
 local TextInputSection = require(script.TextInputSection)
+local BooleanSettingInput = require(script.BooleanSettingInput)
 local CorrectionHandler = script.Parent.CorrectionHandler
 local AppImportInterpreter = require(CorrectionHandler.AppImportInterpreter)
 local Creator = require(CorrectionHandler.Creator)
@@ -43,6 +45,10 @@ end
 
 local function CreateTextInputSection(...)
     return TextInputSection(MainContentList, IsItemSelected, Inputs, ...)
+end
+
+local function CreateBooleanSettingInput(...)
+    return BooleanSettingInput(MainContentList, IsItemSelected, Inputs, SelectedItem, ...)
 end
 
 -- Build type callbacks
@@ -78,6 +84,14 @@ function BuildTypes.TextInputSections(SectionFrame)
             return Success
         end)
     }
+end
+
+function BuildTypes.BooleanSettingInputs(SectionFrame)
+    for _, Data in BOOLEAN_SETTING_INPUT_BUILD_DATA do
+        Hydrate(CreateBooleanSettingInput(Data)) {
+            Parent = SectionFrame,
+        }
+    end
 end
 
 function BuildTypes.AlignmentInputs(SectionFrame)
@@ -160,6 +174,15 @@ local function Apply()
     if ApplyCallback then
         local Stroke = tonumber(Inputs["StrokeThickness"].Text) or 0
         local Oblique = tonumber(Inputs["ObliqueShadowSize"].Text) or 0
+        local Settings = {}
+
+        for InputIndex, SettingValue in Inputs do
+            if InputIndex:find("Setting_") then
+                local SettingName = InputIndex:gsub("Setting_", "")
+    
+                Settings[SettingName] = SettingValue[1]:get()
+            end
+        end
 
         ApplyCallback {
             Size = {
@@ -177,6 +200,7 @@ local function Apply()
                 Y = tonumber(Inputs["AnchorY"].Text) or 0
             },
 
+            Settings = Settings,
             Name = Inputs["Name"].Text,
             Image = Inputs["Image"].Text,
             Stroke = Stroke,
@@ -277,6 +301,18 @@ function Interface:OnSelection(Item)
 
     if Item == nil then
         return
+    end
+
+    for InputIndex, SettingValue in Inputs do
+        if InputIndex:find("Setting_") then
+            local AttributeName = InputIndex:gsub("Setting_", "FigmaSetting_")
+
+            if Item:GetAttribute(AttributeName) ~= nil then
+                SettingValue[1]:set(Item:GetAttribute(AttributeName))
+            else
+                SettingValue[1]:set(SettingValue[2])
+            end
+        end
     end
 
     if Item:GetAttribute("FigmaSize") then

@@ -7,7 +7,7 @@ local New = Fusion.New
 local Hydrate = Fusion.Hydrate
 local Children = Fusion.Children
 
-function Applicator:ApplyChangesFromData(SelectedInstance : Instance, Data : {})
+function Applicator:ApplyChangesFromData(SelectedInstance : Instance, Data : {[string] : any})
     local Size = Vector2.new(Data.Size.X, Data.Size.Y)
     local Position = Vector2.new(Data.Position.X, Data.Position.Y)
 
@@ -28,6 +28,10 @@ function Applicator:ApplyChangesFromData(SelectedInstance : Instance, Data : {})
     local CorrectedPosition = Position - Vector2.new(Stroke, Stroke) - Vector2.new(0, Oblique)
     local FinalSize = CorrectedSize
     local FinalPosition = CorrectedPosition
+
+    for SettingName, SettingValue in Data.Settings do
+        SelectedInstance:SetAttribute(`FigmaSetting_{SettingName}`, SettingValue)
+    end
 
     SelectedInstance:SetAttribute("FigmaSize", Size)
     SelectedInstance:SetAttribute("FigmaPosition", Position)
@@ -56,14 +60,22 @@ function Applicator:ApplyChangesFromData(SelectedInstance : Instance, Data : {})
         SelectedInstance:FindFirstChildOfClass("UIAspectRatioConstraint"):Destroy()
     end
 
+    SelectedInstance.ClipsDescendants = Data.Settings.ClipsDescendants
+
+    local InstanceChildren = {}
+
+    if Data.Settings.IsAspectRatioConstrained then
+        table.insert(InstanceChildren, New "UIAspectRatioConstraint" {
+            AspectRatio = CorrectedSize.X / CorrectedSize.Y,
+        })
+    end
+
     Hydrate(SelectedInstance) {
         Size = ScaledSize,
         Position = ScaledPosition,
         Name = Data.Name,
         AnchorPoint = AnchorPoint,
-        [Children] = New "UIAspectRatioConstraint" {
-            AspectRatio = CorrectedSize.X / CorrectedSize.Y,
-        }
+        [Children] = InstanceChildren
     }
 
     Utility.ApplyImage(SelectedInstance, Data.Image)
