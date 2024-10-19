@@ -13,6 +13,10 @@ function Applicator:ApplyChangesFromData(SelectedInstance : Instance, Data : {[s
 
     Utility.CreateUndoMarkerStart()
 
+    for SettingName, SettingValue in Data.Settings do
+        SelectedInstance:SetAttribute(`FigmaSetting_{SettingName}`, SettingValue)
+    end
+
     if SelectedInstance:IsA("ScreenGui") then
         SelectedInstance:SetAttribute("FigmaSize", Size)
         SelectedInstance:SetAttribute("FigmaPosition", Position)
@@ -28,10 +32,6 @@ function Applicator:ApplyChangesFromData(SelectedInstance : Instance, Data : {[s
     local CorrectedPosition = Position - Vector2.new(Stroke, Stroke) - Vector2.new(0, Oblique)
     local FinalSize = CorrectedSize
     local FinalPosition = CorrectedPosition
-
-    for SettingName, SettingValue in Data.Settings do
-        SelectedInstance:SetAttribute(`FigmaSetting_{SettingName}`, SettingValue)
-    end
 
     SelectedInstance:SetAttribute("FigmaSize", Size)
     SelectedInstance:SetAttribute("FigmaPosition", Position)

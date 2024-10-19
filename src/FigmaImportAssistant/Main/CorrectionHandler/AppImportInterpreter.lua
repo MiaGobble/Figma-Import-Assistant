@@ -11,12 +11,33 @@ local TAG_ACTIONS = {
 
 local HttpService = game:GetService("HttpService")
 
+local function GetOpacityAndColor(Child)
+    local Opacity = Child.opacity or 1
+    local Color = Color3.fromRGB(255, 255, 255)
+
+    if Child.fills then
+        Opacity = 0
+
+        for _, Fill in ipairs(Child.fills) do
+            if Fill.type == "SOLID" then
+                Color = Color3.fromRGB(Fill.color.r * 255, Fill.color.g * 255, Fill.color.b * 255)
+            end
+
+            Opacity += Fill.opacity
+        end
+    end
+
+    return Opacity, Color
+end
+
 local function ReadRecursive(ParentTable)
     local ChildTable = {
         Root = {},
     }
 
     for _, Child in ipairs(ParentTable) do
+        local Opacity, Color = GetOpacityAndColor(Child)
+
         local Interpretation = {
             Size = {
                 X = Child.width,
@@ -42,6 +63,9 @@ local function ReadRecursive(ParentTable)
                 IsAspectRatioConstrained = true,
                 ClipDescendants = true,
             },
+            Opacity = Opacity or 1,
+            Color = Color or Color3.fromRGB(255, 255, 255),
+            CornerRadius = Child.cornerRadius or 0,
     
             -- Unique data from import
             Type = if Child.type == "GROUP" then "Frame" elseif Child.opacity == 0 and Child.strokeWeight == 0 then "Frame" else "ImageLabel"

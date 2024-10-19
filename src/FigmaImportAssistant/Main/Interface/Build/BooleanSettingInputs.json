@@ -3,6 +3,7 @@
         "Text": "Keep Aspect Ratio",
         "Name": "IsAspectRatioConstrained",
         "Type": "Boolean",
+        "Context": "Default",
         "DefaultValue": true
     },
 
@@ -10,6 +11,23 @@
         "Text": "Clip Descendants",
         "Name": "ClipDescendants",
         "Type": "Boolean",
+        "Context": "Default",
         "DefaultValue": true
+    },
+
+    "RespectAutoImportFrameOpacity" : {
+        "Text": "Respect Auto-Import Frame Opacity",
+        "Name": "RespectAutoImportFrameOpacity",
+        "Type": "Boolean",
+        "Context": "ScreenGui",
+        "DefaultValue": false
+    },
+
+    "RespectAutoImportCornerRadius" : {
+        "Text": "Respect Auto-Import Corner Radius",
+        "Name": "RespectAutoImportCornerRadius",
+        "Type": "Boolean",
+        "Context": "ScreenGui",
+        "DefaultValue": false
     }
 }
