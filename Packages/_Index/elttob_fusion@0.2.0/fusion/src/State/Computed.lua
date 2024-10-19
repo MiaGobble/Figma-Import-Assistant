@@ -53,7 +53,7 @@ function class:update(): boolean
 
 	if ok then
 		if self._destructor == nil and needsDestruction(newValue) then
-			logWarn("destructorNeededComputed")
+			--logWarn("destructorNeededComputed")
 		end
 
 		if newMetaValue ~= nil then

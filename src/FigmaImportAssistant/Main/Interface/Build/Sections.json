@@ -6,6 +6,12 @@
     },
 
     {
+        "Name" : "Settings",
+        "Build" : ["BooleanSettingInputs"],
+        "Collapsed" : false
+    },
+
+    {
         "Name" : "Instance Building",
         "Build" : ["CreationButtons"],
         "Collapsed" : true
