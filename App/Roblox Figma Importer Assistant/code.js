@@ -33,6 +33,7 @@ figma.ui.onmessage = msg => {
                 clipsContent: node.clipsContent,
                 fills: node.fills,
                 cornerRadius: node.cornerRadius,
+                effects: node.effects,
                 // strokes: node.strokes,
                 
                 children: []
