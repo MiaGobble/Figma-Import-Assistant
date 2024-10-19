@@ -173,7 +173,7 @@ end
 local function Apply()
     if ApplyCallback then
         local Stroke = tonumber(Inputs["StrokeThickness"].Text) or 0
-        local Oblique = tonumber(Inputs["ObliqueShadowSize"].Text) or 0
+        --local Oblique = tonumber(Inputs["ObliqueShadowSize"].Text) or 0
         local Settings = {}
 
         for InputIndex, SettingValue in Inputs do
@@ -204,7 +204,12 @@ local function Apply()
             Name = Inputs["Name"].Text,
             Image = Inputs["Image"].Text,
             Stroke = Stroke,
-            Oblique = Oblique,
+            Shadow = {
+                Offset = Vector2.new(tonumber(Inputs["ShadowX"].Text) or 0, tonumber(Inputs["ShadowY"].Text) or 0),
+                Radius = tonumber(Inputs["ShadowSpread"].Text) or 0,
+                Spread = tonumber(Inputs["ShadowRadius"].Text) or 0,
+            }
+            --Oblique = Oblique,
         }
     end
 end
@@ -331,8 +336,13 @@ function Interface:OnSelection(Item)
         Inputs["PositionY"].Text = ""
     end
 
+    Inputs["ShadowX"].Text = (Item:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)).X or 0
+    Inputs["ShadowY"].Text = (Item:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)).Y or 0
+    Inputs["ShadowSpread"].Text = Item:GetAttribute("FigmaShadowSpread") or 0
+    Inputs["ShadowRadius"].Text = Item:GetAttribute("FigmaShadowRadius") or 0
+
     Inputs["StrokeThickness"].Text = Item:GetAttribute("FigmaStrokeThickness") or 0
-    Inputs["ObliqueShadowSize"].Text = Item:GetAttribute("FigmaObliqueSize") or 0
+    --Inputs["ObliqueShadowSize"].Text = Item:GetAttribute("FigmaObliqueSize") or 0
 
     Inputs["Name"].Text = Item.Name
     

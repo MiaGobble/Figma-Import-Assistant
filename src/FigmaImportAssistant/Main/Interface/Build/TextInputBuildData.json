@@ -22,15 +22,34 @@
             "Type": "number"
         }
     },
-    
+
     {
-        "StrokeThickness" : {
-            "PlaceholderText": "Stroke",
+        "ShadowX" : {
+            "PlaceholderText": "Shadow X",
             "Type": "number"
         },
 
-        "ObliqueShadowSize" : {
-            "PlaceholderText": "Oblique Size",
+        "ShadowY" : {
+            "PlaceholderText": "Shadow Y",
+            "Type": "number"
+        }
+    },
+
+    {
+        "ShadowSpread" : {
+            "PlaceholderText": "Shadow Spread",
+            "Type": "number"
+        },
+
+        "ShadowRadius" : {
+            "PlaceholderText": "Shadow Radius",
+            "Type": "number"
+        }
+    },
+
+    {
+        "StrokeThickness" : {
+            "PlaceholderText": "Stroke",
             "Type": "number"
         }
     },

@@ -30,6 +30,50 @@ local function GetOpacityAndColor(Child)
     return Opacity, Color
 end
 
+local function CompileShadowData(Child)
+    local ShadowData = {}
+
+    if Child.effects then
+        for _, Effect in ipairs(Child.effects) do
+            if Effect.type == "DROP_SHADOW" then
+                if Effect.visible == false then
+                    continue
+                end
+
+                table.insert(ShadowData, {
+                    Offset = Vector2.new(Effect.offset.x, Effect.offset.y),
+                    Radius = Effect.radius,
+                    Spread = Effect.spread,
+                })
+            end
+        end
+    end
+
+    local MaxOffset = Vector2.new(0, 0)
+    local MaxRadius = 0
+    local MaxSpread = 0
+
+    for _, Shadow in ipairs(ShadowData) do
+        if Shadow.Offset.Magnitude > MaxOffset.Magnitude then
+            MaxOffset = Shadow.Offset
+        end
+
+        if Shadow.Radius > MaxRadius then
+            MaxRadius = Shadow.Radius
+        end
+
+        if Shadow.Spread > MaxSpread then
+            MaxSpread = Shadow.Spread
+        end
+    end
+
+    return {
+        Offset = MaxOffset,
+        Radius = MaxRadius,
+        Spread = MaxSpread,
+    }
+end
+
 local function ReadRecursive(ParentTable)
     local ChildTable = {
         Root = {},
@@ -66,6 +110,7 @@ local function ReadRecursive(ParentTable)
             Opacity = Opacity or 1,
             Color = Color or Color3.fromRGB(255, 255, 255),
             CornerRadius = Child.cornerRadius or 0,
+            Shadow = CompileShadowData(Child),
     
             -- Unique data from import
             Type = if Child.type == "GROUP" then "Frame" elseif Child.opacity == 0 and Child.strokeWeight == 0 then "Frame" else "ImageLabel"
