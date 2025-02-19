@@ -41,3 +41,12 @@ luac.out
 
 # Misc
 *.zip
+
+# Site
+.jekyll-cache/
+_site/
+.sass-cache/
+.jekyll-metadata
+vendor
+Gemfile.lock
+.bundle
