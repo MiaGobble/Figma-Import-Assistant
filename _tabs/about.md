@@ -1,8 +1,8 @@
 ---
 # the default layout is 'page'
-icon: fas fa-info-circle
+icon: ../assets/FigmaImporterAssistant.png
 order: 4
 ---
 
-> Add Markdown syntax content to file `_tabs/about.md`{: .filepath } and it will show up on this page.
+> TBD
 {: .prompt-tip }

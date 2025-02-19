@@ -1,10 +1,9 @@
 ---
 title: Import Tags
-categories: [Getting Started, Importing]
+categories: [Importing, Tags]
 tags: [importing, auto-importing, tags]
 description: Learn how to utilize tags to upgrade your workflow
 date: 2025-2-19 10:00:00 +0300
-pin: true
 ---
 
 # What Are Tags?

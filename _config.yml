@@ -9,7 +9,7 @@ theme: jekyll-theme-chirpy
 lang: en
 
 # Change to your timezone › https://kevinnovak.github.io/Time-Zone-Picker
-timezone:
+timezone: America/New_York
 
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
@@ -19,7 +19,7 @@ title: Figma Importer Assistant # the main title
 tagline: A Roblox plugin for importing Figma files into Studio # it will display as the subtitle
 
 description: >- # used by seo meta and the atom feed
-  A minimal, responsive and feature-rich Jekyll theme for technical writing.
+  A Roblox plugin for importing Figma files into Studio
 
 # Fill in the protocol & hostname for your site.
 # E.g. 'https://username.github.io', note that it does not end with a '/'.
@@ -98,11 +98,11 @@ theme_mode: # [light | dark]
 cdn:
 
 # the avatar on sidebar, support local or CORS resources
-avatar:
+avatar: https://raw.githubusercontent.com/MiaGobble/Figma-Import-Assistant/refs/heads/main/assets/FigmaImportAssistantIcon.png
 
 # The URL of the site-wide social preview image used in SEO `og:image` meta tag.
 # It can be overridden by a customized `page.image` in front matter.
-social_preview_image: # string, local or CORS resources
+social_preview_image: https://raw.githubusercontent.com/MiaGobble/Figma-Import-Assistant/refs/heads/main/assets/FigmaImportAssistantIcon.png # string, local or CORS resources
 
 # boolean type, the global switch for TOC in posts.
 toc: true
