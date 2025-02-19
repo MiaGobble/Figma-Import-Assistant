@@ -1,9 +1,0 @@
-[package]
-name = "aloroid/pluginessentials"
-description = "forked from mvyasu/PluginEssentials to allow to be installed with wally"
-version = "0.1.2"
-registry = "https://github.com/UpliftGames/wally-index"
-realm = "shared"
-license = "MIT"
-
-[dependencies]
