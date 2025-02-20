@@ -9,7 +9,7 @@ date: 2025-2-19 10:00:00 +0200
 # Initial Setup
 To begin, if you haven't already, create a `ScreenGui` instance under `StarterGui`. Open the Roblox plugin and select it. Once you do, you should see something like this:
 
-![](../assets/docs/manualimporting/selectedguiexample.png)
+![image](/assets/docs/manualimporting/selectedguiexample.png)
 
 In Figma, your imported UI **must** be in a parent frame. For example, if you're exporting a settings window, place that settings window in a 1920x1080 frame to simulate a 16:9 viewport.
 
@@ -25,14 +25,14 @@ The width and height you set on the `ScreenGui` will determine how children are 
 # Instance Building
 We can begin our workflow by creating an `ImageLabel` via the plugin. With the `ScreenGui` selected and the plugin open, open the *Instance Building* section and click "Create Child Image Label", like so:
 
-![](../assets/docs/manualimporting/createimagelabel.png)
+![image](/assets/docs/manualimporting/createimagelabel.png)
 
 You can also create any other instance!
 
 # Understanding Properties
 For each UI instance, you'll have associated importer properties when selected. Here is a continuiation of our `ImageLabel` example earlier:
 
-![](../assets/docs/manualimporting/exampleblankproperties.png)
+![image](/assets/docs/manualimporting/exampleblankproperties.png)
 
 Here is a breakdown of the *Figma Properties* section:
 * "X Pos" is the x-position of the related element from Figma
@@ -43,7 +43,7 @@ Here is a breakdown of the *Figma Properties* section:
 
 Right after, you'll see a settings section:
 
-![](../assets/docs/manualimporting/settingssection.png)
+![image](/assets/docs/manualimporting/settingssection.png)
 
 It's pretty self-explanatory:
 * Keep aspect ratio, when checked, will maintain the aspect ratio of UI elements
@@ -51,7 +51,7 @@ It's pretty self-explanatory:
 
 Finally, you'll see the alignment section:
 
-![](../assets/docs/manualimporting/alignmentsection.png)
+![image](/assets/docs/manualimporting/alignmentsection.png)
 
 Setting the X and Y alignment values will change the `AnchorPoint` of the selected instance and automatically move it to stay in the same location. Changing anchor points can be useful for fixing issues or preparing for UI animations.
 
@@ -66,21 +66,21 @@ When you set properties, make sure to click the *Apply* button at the bottom of 
 # Importing A Single Element
 Let's teleport an example square `ImageLabel` image, which looks like this in Figma:
 
-![](../assets/docs/manualimporting/exampleExport.png)
+![image](/assets/docs/manualimporting/exampleExport.png)
 
 Note that the element is inside of a 1920x1080 parent viewport frame, which we will not be exporting.
 
 Let's export the square image to our files, create an `ImageLabel`, and set the `Image` property to the asset id of the uploaded image. Here is what you should see:
 
-![](../assets/docs/manualimporting/uploadImageStep.png)
+![image](/assets/docs/manualimporting/uploadImageStep.png)
 
 Let's propogate our property values over to the plugin. In Figma, these are our properties:
 
-![](../assets/docs/manualimporting/objectFigmaProperties.png)
+![image](/assets/docs/manualimporting/objectFigmaProperties.png)
 
 And if we apply them in Studio, it looks like this:
 
-![](../assets/docs/manualimporting/appliedProperties.png)
+![image](/assets/docs/manualimporting/appliedProperties.png)
 
 And that's it!
 
