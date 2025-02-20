@@ -14,7 +14,7 @@ The plugin is designed with an intuitive and easy-to-use interface that speeds u
 
 Here is what it looks like in studio:
 
-![](../assets/plugin-appearance-example.png)
+![image](/assets/plugin-appearance-example.png)
 
 ## How Does It Work?
 There are two ways to import UI from Figma into Studio:
@@ -30,7 +30,7 @@ Here is a video breaking down the basic usage of it, although this watch is opti
 {: .prompt-warning }
 <!-- markdownlint-restore -->
 
-You can view more information about basic usage by navigating to [manual importing](../posts/manualimporting/) or [automatic importing](../posts/automaticimporting/) tutorial pages.
+You can view more information about basic usage by navigating to [manual importing](../manualimporting/) or [automatic importing](../automaticimporting/) tutorial pages.
 
 ## Installation
 

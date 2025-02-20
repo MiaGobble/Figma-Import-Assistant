@@ -85,4 +85,4 @@ And if we apply them in Studio, it looks like this:
 And that's it!
 
 # Importing More?
-If you're importing much more, you might want to take the automatic route. Head over to the [automatic importing page](/posts/automaticimporting/) to learn about automated batch importing to make your Figma and Studio UI a few clicks apart
+If you're importing much more, you might want to take the automatic route. Head over to the [automatic importing page](../automaticimporting/) to learn about automated batch importing to make your Figma and Studio UI a few clicks apart

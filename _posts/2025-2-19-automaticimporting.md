@@ -8,7 +8,7 @@ date: 2025-2-19 10:00:00 +0100
 
 <!-- markdownlint-capture -->
 <!-- markdownlint-disable -->
-> You need to know how to manually import prior to automatic importing! If you haven't already, learn more [here](/posts/manualimporting/)
+> You need to know how to manually import prior to automatic importing! If you haven't already, learn more [here](../manualimporting/)
 {: .prompt-warning }
 <!-- markdownlint-restore -->
 
@@ -29,7 +29,7 @@ Here is how the import process works:
 # How To Export From Figma
 Before we can import, we need two things: our JSON import code, and the component images.
 
-Before doing anything, we want to apply tags to our Figma objects. You can learn about tags on [this page](/posts/importtags/).
+Before doing anything, we want to apply tags to our Figma objects. You can learn about tags on [this page](../importtags/).
 
 Once tags are applied, select the window/frame you want to export and open the Figma plugin, click export, and copy the generated text:
 ![image](/assets/docs/automaticimporting/exportExample.png)
@@ -55,4 +55,4 @@ In our example, we get this final result:
 
 ![image](/assets/docs/automaticimporting/finalResult.png)
 
-And that's it! You may want to clean up afterwards if there are slight errors in your UI, and if so, it's recommended you check out the [import cleanup](/posts/importcleanup) page.
+And that's it! You may want to clean up afterwards if there are slight errors in your UI, and if so, it's recommended you check out the [import cleanup](../importcleanup) page.
