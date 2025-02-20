@@ -32,7 +32,7 @@ Before we can import, we need two things: our JSON import code, and the componen
 Before doing anything, we want to apply tags to our Figma objects. You can learn about tags on [this page](/posts/importtags/).
 
 Once tags are applied, select the window/frame you want to export and open the Figma plugin, click export, and copy the generated text:
-![](../assets/docs/automaticimporting/exportExample.png)
+![image](/assets/docs/automaticimporting/exportExample.png)
 
 Finally, export each component into your files as a `.png`. You'll upload these in a moment.
 
@@ -46,13 +46,13 @@ Once you're done with that, select your target `ScreenGui`, take your previously
 
 In the above example, our UI will be imported with this hierarchy:
 
-![](../assets/docs/automaticimporting/studioHierarchy.png)
+![image](/assets/docs/automaticimporting/studioHierarchy.png)
 
 # Applying Images
 Once you import, simply bulk upload your images (via asset manager) and go through your `ImageLabel`s and `ImageButton`s one-by-one, applying each asset id to the `Image` property and clicking *Apply*.
 
 In our example, we get this final result:
 
-![](../assets/docs/automaticimporting/finalResult.png)
+![image](/assets/docs/automaticimporting/finalResult.png)
 
 And that's it! You may want to clean up afterwards if there are slight errors in your UI, and if so, it's recommended you check out the [import cleanup](/posts/importcleanup) page.
