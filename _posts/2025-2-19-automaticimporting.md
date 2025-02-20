@@ -27,6 +27,12 @@ Here is how the import process works:
 
 {% include embed/youtube.html id='WsKPRBfXtNU' %}
 
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
+> This example video is outdated and was made before shadow data and more was auto-exported, so it's less complicated than it seems!
+{: .prompt-warning }
+<!-- markdownlint-restore -->
+
 # How To Export From Figma
 Before we can import, we need two things: our JSON import code, and the component images.
 
