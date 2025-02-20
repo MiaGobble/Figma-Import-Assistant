@@ -36,7 +36,7 @@ Here is a video breaking down the basic usage of it, although this watch is opti
 {: .prompt-warning }
 <!-- markdownlint-restore -->
 
-You can view more information about basic usage by navigating to [manual importing]() or [automatic importing]() tutorial pages.
+You can view more information about basic usage by navigating to [manual importing](/posts/manualimporting/) or [automatic importing](/posts/automaticimporting/) tutorial pages.
 
 ## Installation
 
