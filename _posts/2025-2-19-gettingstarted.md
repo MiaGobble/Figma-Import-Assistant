@@ -39,9 +39,11 @@ At minimum, you will need the Roblox plugin! Here are some options:
 If you get it from the Github releases page, you can install it by inserting the `.rbxm` file into Studio, right-clicking it, and clicking "save as local plugin".
 
 ### Figma Plugin
-You will need the Figma plugin in order to do automatic importing. You can get it from the [GitHub releases page](https://github.com/MiaGobble/Figma-Import-Assistant/releases).
+You will need the Figma plugin in order to do automatic importing.
 
-Once downloaded:
+You can get the plugin on Figma from [the plugin page](https://www.figma.com/community/plugin/1474417780898732294/roblox-figma-importer-assistant).
+
+Alternatively can get it from the [GitHub releases page](https://github.com/MiaGobble/Figma-Import-Assistant/releases). Once downloaded:
 * Unzip App folder
 * In Figma, go to Plugins -> Development -> Import plugin from manifest
 * Go to the unzipped App folder and import the file named "manifest"
