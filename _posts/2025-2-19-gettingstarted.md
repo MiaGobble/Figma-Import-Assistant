@@ -21,12 +21,6 @@ There are two ways to import UI from Figma into Studio:
 * Manually
 * Automatically
 
-<!-- markdownlint-capture -->
-<!-- markdownlint-disable -->
-> It's recommended you start with automatic importing before making manual cleanup changes
-{: .prompt-tip }
-<!-- markdownlint-restore -->
-
 Here is a video breaking down the basic usage of it, although this watch is optional and will be explained more in-depth later!
 {% include embed/youtube.html id='o5XB27Fu3jk' %}
 
