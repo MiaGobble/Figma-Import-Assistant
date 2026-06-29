@@ -1,20 +1,65 @@
 local CorrectionHandler = {}
 
+-- Services
 local SelectionService = game:GetService("Selection")
 
+-- Imports
 local Interface = require(script.Parent.Interface)
 local Utility = require(script.Parent.Utility)
 local AppImportInterpreter = require(script.AppImportInterpreter)
 local Creator = require(script.Creator)
 local Applicator = require(script.Applicator)
+local Converter = require(script.Converter)
 
+-- Variables
 local SelectedInstance = nil
 
 function CorrectionHandler:Init()
-    Interface:OnApply(function(Data)
-        if SelectedInstance then
-            Applicator:ApplyChangesFromData(SelectedInstance, Data)
+    Interface.OnApply(function(data, selected)
+        if selected then
+            Applicator:ApplyChangesFromData(selected, data)
         end
+    end)
+
+    Interface.OnAutoImport(function(mode, importDataJSON, selected)
+        if not selected or not selected:IsA("ScreenGui") then
+            warn("Auto import requires a selected ScreenGui")
+            return
+        end
+
+        local Success, InterpretedData = pcall(function()
+            return AppImportInterpreter:InterpretJSONData(importDataJSON, mode)
+        end)
+
+        if not Success then
+            warn(`Failed to parse import JSON: {InterpretedData}`)
+            return
+        end
+
+        if InterpretedData and #InterpretedData.Root > 0 then
+            Utility.CreateUndoMarkerStart()
+            Creator:CreateFromData(selected, InterpretedData, mode)
+            Utility.CreateUndoMarkerEnd()
+        end
+    end)
+
+    Interface.OnCreateInstance(function(className, selected)
+        if not selected or (not selected:IsA("GuiObject") and not selected:IsA("ScreenGui")) then
+            return
+        end
+
+        local NewObject = Instance.new(className)
+        NewObject.Name = className
+        NewObject.Parent = selected
+        SelectionService:Set({NewObject})
+    end)
+
+    Interface.OnConvertInstance(function(targetClassName, selected)
+        if not selected then
+            return
+        end
+
+        Converter:ConvertInstance(selected, targetClassName)
     end)
 
     SelectionService.SelectionChanged:Connect(function()
@@ -31,16 +76,8 @@ function CorrectionHandler:Init()
             SelectedInstance = nil
         end
         
-        Interface:OnSelection(SelectedInstance)
+        Interface.OnSelection(SelectedInstance)
     end)
-end
-
-function CorrectionHandler:BuildFromImportData(ImportDataJSON : string)
-    local InterpretedData = AppImportInterpreter:InterpretJSONData(ImportDataJSON)
-
-    if InterpretedData and #InterpretedData > 0 then
-        Creator:CreateFromData(InterpretedData)
-    end
 end
 
 return CorrectionHandler

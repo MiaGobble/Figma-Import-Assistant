@@ -3,16 +3,16 @@
 registry = "test"
 
 [[package]]
-name = "aloroid/pluginessentials"
-version = "0.1.2"
-dependencies = []
-
-[[package]]
-name = "elttob/fusion"
-version = "0.2.0"
-dependencies = []
-
-[[package]]
 name = "mia/slap-battles-plugins"
 version = "0.1.0"
-dependencies = [["Fusion", "elttob/fusion@0.2.0"], ["PluginEssentials", "aloroid/pluginessentials@0.1.2"]]
+dependencies = [["Jian", "miagobble/jian@0.1.1"], ["Seam", "miagobble/seam@0.5.6"]]
+
+[[package]]
+name = "miagobble/jian"
+version = "0.1.1"
+dependencies = []
+
+[[package]]
+name = "miagobble/seam"
+version = "0.5.6"
+dependencies = []

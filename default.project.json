@@ -8,7 +8,7 @@
       "Plugins": {
         "$className": "Folder",
 
-        "FigmaImportAssistant": {
+        "FigmaImportAssistantDev": {
           "$className": "Folder",
           "$path": "src/FigmaImportAssistant",
 

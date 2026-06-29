@@ -1,101 +1,147 @@
 local Applicator = {}
 
-local Packages = script.Parent.Parent.Parent.Packages
-local Fusion = require(Packages.Fusion)
+-- Imports
 local Utility = require(script.Parent.Parent.Utility)
-local New = Fusion.New
-local Hydrate = Fusion.Hydrate
-local Children = Fusion.Children
+local Packages = script.Parent.Parent.Parent.Packages
+local Seam = require(Packages.Seam)
 
-local function GetOffsettedSizeAndPositionFromShadow(Shadow)
-    local Offset = Shadow.Offset
-    local Radius = Shadow.Radius
-    local Spread = Shadow.Spread
+local function GetOffsettedSizeAndPositionFromShadow(shadow)
+    local SafeShadow = shadow or {}
+    local Offset = SafeShadow.Offset or Vector2.new(0, 0)
+    local Radius = SafeShadow.Radius or 0
+    local Spread = SafeShadow.Spread or 0
     local OffsettedSize = Vector2.new(Radius, Radius) + Vector2.new(Spread, Spread)
 
     return OffsettedSize, Offset
 end
 
-function Applicator:ApplyChangesFromData(SelectedInstance : Instance, Data : {[string] : any})
-    local Size = Vector2.new(Data.Size.X, Data.Size.Y)
-    local Position = Vector2.new(Data.Position.X, Data.Position.Y)
+local function ToNumber(value, fallback)
+    local Number = tonumber(value)
+
+    if Number == nil then
+        return fallback
+    end
+
+    return Number
+end
+
+local function EnsureAspectRatioConstraint(selectedInstance : Instance, enabled : boolean, aspectRatio : number)
+    local Existing = selectedInstance:FindFirstChildOfClass("UIAspectRatioConstraint")
+
+    if enabled then
+        if not Existing then
+            Existing = Instance.new("UIAspectRatioConstraint")
+            Existing.Parent = selectedInstance
+        end
+
+        Existing.AspectRatio = aspectRatio
+    elseif Existing then
+        Existing:Destroy()
+    end
+end
+
+function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[string] : any})
+    if not selectedInstance then
+        return
+    end
+
+    local Size = Vector2.new(
+        ToNumber(data.Size and data.Size.X, selectedInstance:GetAttribute("FigmaSize") and selectedInstance:GetAttribute("FigmaSize").X or 100),
+        ToNumber(data.Size and data.Size.Y, selectedInstance:GetAttribute("FigmaSize") and selectedInstance:GetAttribute("FigmaSize").Y or 100)
+    )
+
+    local Position = Vector2.new(
+        ToNumber(data.Position and data.Position.X, selectedInstance:GetAttribute("FigmaPosition") and selectedInstance:GetAttribute("FigmaPosition").X or 0),
+        ToNumber(data.Position and data.Position.Y, selectedInstance:GetAttribute("FigmaPosition") and selectedInstance:GetAttribute("FigmaPosition").Y or 0)
+    )
 
     Utility.CreateUndoMarkerStart()
 
-    for SettingName, SettingValue in Data.Settings do
-        SelectedInstance:SetAttribute(`FigmaSetting_{SettingName}`, SettingValue)
+    local SettingAttributes = {}
+    for SettingName, SettingValue in pairs(data.Settings or {}) do
+        SettingAttributes[`FigmaSetting_{SettingName}`] = SettingValue
     end
 
-    if SelectedInstance:IsA("ScreenGui") then
-        SelectedInstance:SetAttribute("FigmaSize", Size)
-        SelectedInstance:SetAttribute("FigmaPosition", Position)
-        SelectedInstance.Name = Data.Name
+    local SettingSeamProperties = {}
+    for AttributeName, AttributeValue in pairs(SettingAttributes) do
+        SettingSeamProperties[Seam.Attribute(AttributeName)] = AttributeValue
+    end
+    Seam.New(selectedInstance, SettingSeamProperties)
+
+    if selectedInstance:IsA("ScreenGui") then
+        Seam.New(selectedInstance, {
+            Name = data.Name or selectedInstance.Name,
+            [Seam.Attribute("FigmaSize")] = Size,
+            [Seam.Attribute("FigmaPosition")] = Position,
+        })
+
+        Utility.CreateUndoMarkerEnd()
+        return
+    end
+
+    if not selectedInstance:IsA("GuiObject") then
         Utility.CreateUndoMarkerEnd()
         return
     end
             
-    local AnchorPoint = Vector2.new(Data.AnchorPoint.X or 0, Data.AnchorPoint.Y or 0)
-    local Stroke = Data.Stroke
-    local ShadowOffsettedSize, ShadowOffset = GetOffsettedSizeAndPositionFromShadow(Data.Shadow)
-    local ShadowOffsetFinal = ShadowOffsettedSize--ShadowOffset / 2 + ShadowOffsettedSize
+    local AnchorPoint = Vector2.new(
+        ToNumber(data.AnchorPoint and data.AnchorPoint.X, selectedInstance.AnchorPoint.X),
+        ToNumber(data.AnchorPoint and data.AnchorPoint.Y, selectedInstance.AnchorPoint.Y)
+    )
+
+    local Stroke = ToNumber(data.Stroke, selectedInstance:GetAttribute("FigmaStrokeThickness") or 0)
+    local ShadowOffsettedSize, ShadowOffset = GetOffsettedSizeAndPositionFromShadow(data.Shadow)
+    local ShadowOffsetFinal = ShadowOffsettedSize -- ShadowOffset / 2 + ShadowOffsettedSize
     local CorrectedSize = Size + Vector2.new(Stroke * 2, Stroke * 2) + ShadowOffsettedSize * 2 + ShadowOffset
     local CorrectedPosition = Position - Vector2.new(Stroke, Stroke) - ShadowOffsetFinal + ShadowOffset / 2
     local FinalSize = CorrectedSize
     local FinalPosition = CorrectedPosition
     
 
-    SelectedInstance:SetAttribute("FigmaSize", Size)
-    SelectedInstance:SetAttribute("FigmaPosition", Position)
-    SelectedInstance:SetAttribute("FigmaShadowOffset", ShadowOffset)
-    SelectedInstance:SetAttribute("FigmaShadowRadius", Data.Shadow.Radius)
-    SelectedInstance:SetAttribute("FigmaShadowSpread", Data.Shadow.Spread)
+    Seam.New(selectedInstance, {
+        [Seam.Attribute("FigmaSize")] = Size,
+        [Seam.Attribute("FigmaPosition")] = Position,
+        [Seam.Attribute("FigmaShadowOffset")] = ShadowOffset,
+        [Seam.Attribute("FigmaShadowRadius")] = data.Shadow and data.Shadow.Radius or 0,
+        [Seam.Attribute("FigmaShadowSpread")] = data.Shadow and data.Shadow.Spread or 0,
+    })
 
-    if SelectedInstance.Parent:GetAttribute("FigmaStrokeThickness") then
-        local Stroke = SelectedInstance.Parent:GetAttribute("FigmaStrokeThickness") - Stroke
-        FinalSize -= Vector2.new(Stroke, Stroke) * 2
-        FinalPosition += Vector2.new(Stroke, Stroke)
+    if selectedInstance.Parent:GetAttribute("FigmaStrokeThickness") then
+        local ParentStrokeOffset = selectedInstance.Parent:GetAttribute("FigmaStrokeThickness") - Stroke
+        FinalSize -= Vector2.new(ParentStrokeOffset, ParentStrokeOffset) * 2
+        FinalPosition += Vector2.new(ParentStrokeOffset, ParentStrokeOffset)
     end
 
-    -- if SelectedInstance.Parent:GetAttribute("FigmaObliqueSize") then
-    --     local Oblique = SelectedInstance.Parent:GetAttribute("FigmaObliqueSize") - Oblique
-    --     FinalSize -= Vector2.new(0, Oblique)
-    -- end
-
-    if SelectedInstance.Parent:GetAttribute("IsFigmaImportGroup") then
-        FinalPosition -= SelectedInstance.Parent:GetAttribute("FigmaPosition")
+    if selectedInstance.Parent:GetAttribute("IsFigmaImportGroup") then
+        FinalPosition -= selectedInstance.Parent:GetAttribute("FigmaPosition")
     end
 
-    local ScaledSize = Utility.ConvertToContextualScale(SelectedInstance, FinalSize)
-    local ScaledPosition = Utility.ConvertToContextualScale(SelectedInstance, FinalPosition)
+    local ScaledSize = Utility.ConvertToContextualScale(selectedInstance, FinalSize)
+    local ScaledPosition = Utility.ConvertToContextualScale(selectedInstance, FinalPosition)
             
     ScaledPosition += UDim2.fromScale(ScaledSize.X.Scale * AnchorPoint.X, ScaledSize.Y.Scale * AnchorPoint.Y)
-        
-    if SelectedInstance:FindFirstChildOfClass("UIAspectRatioConstraint") then
-        SelectedInstance:FindFirstChildOfClass("UIAspectRatioConstraint"):Destroy()
-    end
-
-    SelectedInstance.ClipsDescendants = Data.Settings.ClipsDescendants
-
-    local InstanceChildren = {}
-
-    if Data.Settings.IsAspectRatioConstrained then
-        table.insert(InstanceChildren, New "UIAspectRatioConstraint" {
-            AspectRatio = CorrectedSize.X / CorrectedSize.Y,
-        })
-    end
-
-    Hydrate(SelectedInstance) {
+    
+    Seam.New(selectedInstance, {
+        ClipsDescendants = data.Settings and data.Settings.ClipDescendants ~= nil and data.Settings.ClipDescendants or selectedInstance.ClipsDescendants,
         Size = ScaledSize,
         Position = ScaledPosition,
-        Name = Data.Name,
+        Name = data.Name or selectedInstance.Name,
         AnchorPoint = AnchorPoint,
-        [Children] = InstanceChildren
-    }
+    })
 
-    Utility.ApplyImage(SelectedInstance, Data.Image)
+    local AspectRatio = if CorrectedSize.Y ~= 0 then CorrectedSize.X / CorrectedSize.Y else 1
+    
+    EnsureAspectRatioConstraint(
+        selectedInstance,
+        data.Settings and data.Settings.IsAspectRatioConstrained == true,
+        AspectRatio
+    )
 
-    SelectedInstance:SetAttribute("FigmaStrokeThickness", Stroke)
-    --SelectedInstance:SetAttribute("FigmaObliqueSize", Oblique)
+    Utility.ApplyImage(selectedInstance, data.Image)
+
+    Seam.New(selectedInstance, {
+        [Seam.Attribute("FigmaStrokeThickness")] = Stroke,
+    })
 
     Utility.CreateUndoMarkerEnd()
 end
