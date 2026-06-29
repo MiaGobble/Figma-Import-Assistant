@@ -12,8 +12,13 @@ local Jian = require(Packages.Jian)
 local Scope = Seam.Scope(Seam)
 local Widget = nil
 local CurrentSelectedInstance = Scope:Value(nil)
-
+local ApplyCallbacks = {}
+local AutoImportCallbacks = {}
+local CreateInstanceCallbacks = {}
+local ConvertInstanceCallbacks = {}
+local OpenImageMapperCallbacks = {}
 local InputRefs = {}
+
 local SettingValues = {
     KeepAspectRatio = Scope:Value(true),
     ClipDescendants = Scope:Value(true),
@@ -26,12 +31,6 @@ local SettingValues = {
     RespectFrameOpacity = Scope:Value(true),
     DefaultOpportunisticMode = Scope:Value(true),
 }
-
-local ApplyCallbacks = {}
-local AutoImportCallbacks = {}
-local CreateInstanceCallbacks = {}
-local ConvertInstanceCallbacks = {}
-local OpenImageMapperCallbacks = {}
 
 local IsDefaultElementEnabled = Scope:Computed(function(Use)
     return Use(CurrentSelectedInstance) ~= nil
@@ -55,7 +54,6 @@ local ShowAutoImportWarning = Scope:Computed(function(Use)
     local Selected = Use(CurrentSelectedInstance)
     return Selected == nil or not Selected:IsA("ScreenGui")
 end)
-
 
 local function ToNumber(value, fallback)
     local Number = tonumber(value)
@@ -308,14 +306,16 @@ local function ApplyImportSettingsToRoot(rootGui)
         return
     end
 
-    rootGui:SetAttribute("FigmaSetting_IsAspectRatioConstrained", SettingValues.KeepAspectRatio.Value)
-    rootGui:SetAttribute("FigmaSetting_ImportFramesAsFrames", SettingValues.ImportFramesAsFrames.Value)
-    rootGui:SetAttribute("FigmaSetting_ImportTextAsText", SettingValues.ImportTextAsText.Value)
-    rootGui:SetAttribute("FigmaSetting_ImportStrokesAsUIStroke", SettingValues.ImportStrokesAsUIStroke.Value)
-    rootGui:SetAttribute("FigmaSetting_ApplyBackgroundColor", SettingValues.ApplyBackgroundColor.Value)
-    rootGui:SetAttribute("FigmaSetting_ApplyAutoLayout", SettingValues.ApplyAutoLayout.Value)
-    rootGui:SetAttribute("FigmaSetting_RespectAutoImportCornerRadius", SettingValues.RespectCornerRadius.Value)
-    rootGui:SetAttribute("FigmaSetting_RespectAutoImportFrameOpacity", SettingValues.RespectFrameOpacity.Value)
+    Seam.New(rootGui, {
+        [Seam.Attribute("FigmaSetting_IsAspectRatioConstrained")] = SettingValues.KeepAspectRatio.Value,
+        [Seam.Attribute("FigmaSetting_ImportFramesAsFrames")] = SettingValues.ImportFramesAsFrames.Value,
+        [Seam.Attribute("FigmaSetting_ImportTextAsText")] = SettingValues.ImportTextAsText.Value,
+        [Seam.Attribute("FigmaSetting_ImportStrokesAsUIStroke")] = SettingValues.ImportStrokesAsUIStroke.Value,
+        [Seam.Attribute("FigmaSetting_ApplyBackgroundColor")] = SettingValues.ApplyBackgroundColor.Value,
+        [Seam.Attribute("FigmaSetting_ApplyAutoLayout")] = SettingValues.ApplyAutoLayout.Value,
+        [Seam.Attribute("FigmaSetting_RespectAutoImportCornerRadius")] = SettingValues.RespectCornerRadius.Value,
+        [Seam.Attribute("FigmaSetting_RespectAutoImportFrameOpacity")] = SettingValues.RespectFrameOpacity.Value,
+    })
 end
 
 local function BuildSection(text, children, parent, openByDefault)
