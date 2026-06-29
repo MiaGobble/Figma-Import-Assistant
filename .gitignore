@@ -50,3 +50,4 @@ _site/
 vendor
 Gemfile.lock
 .bundle
+/build
