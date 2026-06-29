@@ -7,6 +7,6 @@
     "figma"
   ],
   "ui": "ui.html",
-  "networkAccess": { "allowedDomains": "none" },
+  "networkAccess": { "allowedDomains": ["none"] },
   "documentAccess": "dynamic-page"
 }
