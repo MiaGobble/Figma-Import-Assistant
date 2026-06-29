@@ -5,5 +5,5 @@ registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 
 [dependencies]
-PluginEssentials = "aloroid/pluginessentials@0.1.2"
-Fusion = "elttob/fusion@0.2.0"
+Jian = "miagobble/jian@0.1.1"
+Seam = "miagobble/seam@0.5.6"

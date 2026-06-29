@@ -1,38 +1,268 @@
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/figma-plugin-ds.css">
-
 <style>
+  :root {
+    --bg: #232323;
+    --panel: #232323;
+    --panel-2: #232323;
+    --text: #ffffff;
+    --muted: #a3a3a3;
+    --accent: #3c3c3c;
+    --accent-2: #3c3c3c;
+    --danger: #323232;
+    --border: #282828;
+    --mono: "Consolas", monospace;
+    --sans: "Segoe UI", "Tahoma", sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
   body {
-    padding: 2em;
+    margin: 0;
+    padding: 14px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
   }
-  div {
-    margin: 1em;
+
+  .stack {
+    display: grid;
+    gap: 12px;
   }
-  input {
-    display: block;
+
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 6px;
+    padding: 10px;
+  }
+
+  .title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  .muted {
+    color: var(--muted);
+    font-size: 11px;
+    margin: 0;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .btn {
+    border: 1px solid var(--border);
+    background: #3c3c3c;
+    color: var(--text);
+    border-radius: 6px;
+    padding: 7px 11px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .btn:hover {
+    filter: brightness(1.08);
+  }
+
+  .btn.primary {
+    background: #3c3c3c;
+    border-color: #282828;
+    color: #ffffff;
+  }
+
+  .btn.good {
+    background: #3c3c3c;
+    border-color: #282828;
+    color: #ffffff;
+  }
+
+  .btn.danger {
+    background: #323232;
+    border-color: #282828;
+    color: #ffffff;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #323232;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px;
+    resize: vertical;
+  }
+
+  label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .status {
+    font-size: 11px;
+    color: var(--muted);
+    min-height: 16px;
   }
 </style>
 
-<div>
-  <label for="CodeTitle">Select an instance and then click "export" to get your export data. After doing so, copy and paste the export data into the Roblox plugin.</label>
-</div>
+<main class="stack">
+  <section class="panel">
+    <h1 class="title">Figma Import Assistant Export</h1>
+    <p class="muted">Select one or more root nodes and export JSON for the Roblox plugin.</p>
 
-<div>
-  <button class = "button button--primary" id="Generate">Export</button>
-</div>
+    <div class="row">
+      <label><input type="radio" name="mode" value="classic"> Classic</label>
+      <label><input type="radio" name="mode" value="opportunistic" checked> Opportunistic</label>
+    </div>
 
-<div>
-  <!-- <label for="CodeTitle2">Export Data:</label> -->
-  <input type="text" rows="2" value = "" id ="Code">
-</div>
+    <div class="row">
+      <button id="exportButton" class="btn primary">Export Selection</button>
+      <button id="copyButton" class="btn">Copy JSON</button>
+      <button id="clearButton" class="btn danger">Clear</button>
+    </div>
+    <p id="status" class="status"></p>
+  </section>
+
+  <section class="panel">
+    <h2 class="title">Tag Tools</h2>
+    <p class="muted">Apply or remove tags from selected layers without editing names manually.</p>
+    <div class="row">
+      <button class="btn good" data-tag="GROUP" data-action="add">+ @GROUP</button>
+      <button class="btn good" data-tag="IGNORE" data-action="add">+ @IGNORE</button>
+      <button class="btn" data-tag="TEXT" data-action="add">+ @TEXT</button>
+      <button class="btn" data-tag="TYPE_IMAGE" data-action="add">+ @TYPE_IMAGE</button>
+      <button class="btn" data-tag="TYPE_BUTTON" data-action="add">+ @TYPE_BUTTON</button>
+      <button class="btn" data-tag="TYPE_FRAME" data-action="add">+ @TYPE_FRAME</button>
+      <button class="btn" data-tag="TYPE_SCROLLING_FRAME" data-action="add">+ @TYPE_SCROLLING_FRAME</button>
+    </div>
+    <div class="row">
+      <button class="btn danger" data-tag="GROUP" data-action="remove">- @GROUP</button>
+      <button class="btn danger" data-tag="IGNORE" data-action="remove">- @IGNORE</button>
+      <button class="btn danger" data-tag="TEXT" data-action="remove">- @TEXT</button>
+      <button class="btn danger" data-tag="TYPE_IMAGE" data-action="remove">- @TYPE_IMAGE</button>
+      <button class="btn danger" data-tag="TYPE_BUTTON" data-action="remove">- @TYPE_BUTTON</button>
+      <button class="btn danger" data-tag="TYPE_FRAME" data-action="remove">- @TYPE_FRAME</button>
+      <button class="btn danger" data-tag="TYPE_SCROLLING_FRAME" data-action="remove">- @TYPE_SCROLLING_FRAME</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="title">Export JSON</h2>
+    <textarea id="output" placeholder="Your export JSON will appear here..."></textarea>
+  </section>
+</main>
 
 <script>
-  const CodeText = document.getElementById('Code')
-  document.getElementById('Generate').onclick = () => {
-    parent.postMessage({
-      pluginMessage: 'Run'
-    }, '*')
+  const output = document.getElementById("output");
+  const status = document.getElementById("status");
+
+  function setStatus(text) {
+    status.textContent = text;
   }
-onmessage = (event) => {
-  CodeText.value = event.data.pluginMessage
-}
+
+  function getMode() {
+    const selected = document.querySelector("input[name='mode']:checked");
+    return selected ? selected.value : "classic";
+  }
+
+  function tryCopyWithExecCommand(text) {
+    output.focus();
+    output.select();
+    output.setSelectionRange(0, text.length);
+
+    try {
+      return document.execCommand("copy");
+    } catch (_) {
+      return false;
+    }
+  }
+
+  document.getElementById("exportButton").addEventListener("click", () => {
+    setStatus("Exporting selection...");
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: "export",
+          mode: getMode(),
+        },
+      },
+      "*"
+    );
+  });
+
+  document.getElementById("copyButton").addEventListener("click", async () => {
+    if (!output.value) {
+      setStatus("Nothing to copy yet.");
+      return;
+    }
+
+    if (tryCopyWithExecCommand(output.value)) {
+      setStatus("Copied export JSON to clipboard.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(output.value);
+      setStatus("Copied export JSON to clipboard.");
+    } catch (_) {
+      output.focus();
+      output.select();
+      setStatus("Copy blocked by host; JSON is selected so you can press Ctrl+C.");
+    }
+  });
+
+  document.getElementById("clearButton").addEventListener("click", () => {
+    output.value = "";
+    setStatus("Cleared output.");
+  });
+
+  document.querySelectorAll("button[data-tag]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const tag = button.getAttribute("data-tag");
+      const action = button.getAttribute("data-action");
+
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: "tag",
+            tag,
+            action,
+          },
+        },
+        "*"
+      );
+    });
+  });
+
+  onmessage = (event) => {
+    const message = event.data.pluginMessage;
+
+    if (!message) {
+      return;
+    }
+
+    if (message.type === "exportResult") {
+      output.value = message.payload;
+      setStatus(`Export complete. ${message.nodeCount} node(s) included.`);
+      return;
+    }
+
+    if (message.type === "tagResult") {
+      setStatus(message.message);
+      return;
+    }
+
+    if (message.type === "error") {
+      setStatus(message.message);
+    }
+  };
 </script>

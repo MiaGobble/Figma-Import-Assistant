@@ -1,368 +1,619 @@
 local Interface = {}
 
--- Constants
-local BUILD_DATA = script.Build
-local BUILD_SECTIONS_DATA = require(BUILD_DATA.Sections)
-local TEXT_INPUT_BUILD_DATA = require(BUILD_DATA.TextInputBuildData)
-local INSTANCE_BUTTON_BUILD_DATA = require(BUILD_DATA.InstanceCreationButtons)
-local ALIGNMENT_INPUT_BUILD_DATA = require(BUILD_DATA.AlignmentInputs)
-local IMPORT_INPUT_BUILD_DATA = require(BUILD_DATA.ImportInputs)
-local BOOLEAN_SETTING_INPUT_BUILD_DATA = require(BUILD_DATA.BooleanSettingInputs)
+local SelectionService = game:GetService("Selection")
 
--- Imports
 local Packages = script.Parent.Parent.Packages
-local Component = require(script.Parent.Component)
-local SearchWidget = require(script.SearchWidget)
-local Keybinds = require(script.Keybinds)
-local Fusion = require(Packages.Fusion)
-local InstanceCreationButton = require(script.InstanceCreationButton)
-local TextInputSection = require(script.TextInputSection)
-local BooleanSettingInput = require(script.BooleanSettingInput)
-local CorrectionHandler = script.Parent.CorrectionHandler
-local AppImportInterpreter = require(CorrectionHandler.AppImportInterpreter)
-local Creator = require(CorrectionHandler.Creator)
-local New = Fusion.New
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
-local Value = Fusion.Value
-local Hydrate = Fusion.Hydrate
-local Computed = Fusion.Computed
+local Seam = require(Packages.Seam)
+local Jian = require(Packages.Jian)
 
--- Variables
-local Plugin = script:FindFirstAncestorOfClass("Plugin")
+local Scope = Seam.Scope(Seam)
 local Widget = nil
-local MainContentList = nil
-local SelectedItem = Value(nil)
-local IsItemSelected = Value(false)
-local Inputs = {}
-local ApplyCallback = nil
-local BuildTypes = {}
+local CurrentSelectedInstance = Scope:Value(nil)
 
--- Functions
-local function CreateInstanceCreationButton(...)
-    return InstanceCreationButton(Inputs, MainContentList, SelectedItem, IsItemSelected, ...)
+local InputRefs = {}
+local SettingValues = {
+    KeepAspectRatio = Scope:Value(true),
+    ClipDescendants = Scope:Value(true),
+    ImportFramesAsFrames = Scope:Value(true),
+    ImportTextAsText = Scope:Value(true),
+    ImportStrokesAsUIStroke = Scope:Value(true),
+    ApplyBackgroundColor = Scope:Value(true),
+    ApplyAutoLayout = Scope:Value(true),
+    RespectCornerRadius = Scope:Value(true),
+    RespectFrameOpacity = Scope:Value(true),
+    DefaultOpportunisticMode = Scope:Value(true),
+}
+
+local ApplyCallbacks = {}
+local AutoImportCallbacks = {}
+local CreateInstanceCallbacks = {}
+local ConvertInstanceCallbacks = {}
+local OpenImageMapperCallbacks = {}
+
+local IsDefaultElementEnabled = Scope:Computed(function(Use)
+    return Use(CurrentSelectedInstance) ~= nil
+end)
+
+local IsAnyUIObjectElementEnabled = Scope:Computed(function(Use)
+    local Selected = Use(CurrentSelectedInstance)
+    return Selected ~= nil and (Selected:IsA("GuiObject") or Selected:IsA("ScreenGui"))
+end)
+
+local IsAutoImportElementEnabled = Scope:Computed(function(Use)
+    local Selected = Use(CurrentSelectedInstance)
+    return Selected ~= nil and Selected:IsA("ScreenGui")
+end)
+
+local ShowNoSelectionWarning = Scope:Computed(function(Use)
+    return Use(CurrentSelectedInstance) == nil
+end)
+
+local ShowAutoImportWarning = Scope:Computed(function(Use)
+    local Selected = Use(CurrentSelectedInstance)
+    return Selected == nil or not Selected:IsA("ScreenGui")
+end)
+
+local function ToNumber(Value, Fallback)
+    local Number = tonumber(Value)
+
+    if Number == nil then
+        return Fallback
+    end
+
+    return Number
 end
 
-local function CreateTextInputSection(...)
-    return TextInputSection(MainContentList, IsItemSelected, Inputs, ...)
+local function RegisterInput(Key, Input)
+    InputRefs[Key] = Input
+    return Input
 end
 
-local function CreateBooleanSettingInput(...)
-    return BooleanSettingInput(MainContentList, IsItemSelected, Inputs, SelectedItem, ...)
+local function BuildRow(Children, Height, Padding)
+    local ChildList = {
+        Scope:New(Jian.ListLayout, {
+            FillDirection = Enum.FillDirection.Horizontal,
+            HorizontalAlignment = Enum.HorizontalAlignment.Center,
+            Padding = UDim.new(0, Padding or 8),
+        }),
+    }
+
+    for _, Child in ipairs(Children) do
+        table.insert(ChildList, Child)
+    end
+
+    return Scope:New("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, Height or 30),
+        [Seam.Children] = ChildList,
+    })
 end
 
--- Build type callbacks
-function BuildTypes.CreationButtons(SectionFrame)
-    for _, Data in ipairs(INSTANCE_BUTTON_BUILD_DATA) do
-        for PropertyKey, Value in Data.Properties do
-            if PropertyKey:find("Color3") then
-                Data.Properties[PropertyKey] = Color3.fromRGB(unpack(Value))
-            elseif PropertyKey:find("Size") or PropertyKey:find("Position") then
-                Data.Properties[PropertyKey] = UDim2.new(unpack(Value))
-            end
+local function BuildTextInput(Key, Title, ActiveState, Width)
+    return RegisterInput(Key, Scope:New(Jian.TextBox, {
+        Title = Title,
+        Size = Width or UDim2.fromScale(0.45, 1),
+        Active = ActiveState,
+    }))
+end
+
+local function BuildCheckbox(Title, ActiveState, ValueState, Width)
+    return Scope:New(Jian.Checkbox, {
+        Title = Title,
+        Size = Width or UDim2.fromScale(0.45, 1),
+        Active = ActiveState,
+        Value = ValueState,
+    })
+end
+
+local function BuildButton(Text, ActiveState, Width, Callback)
+    return Scope:New(Jian.TextButton, {
+        Text = Text,
+        Size = Width or UDim2.fromScale(0.3, 1),
+        Active = ActiveState,
+        [Seam.OnEvent "Activated"] = Callback,
+    })
+end
+
+local function ReadText(Key)
+    local Ref = InputRefs[Key]
+
+    if not Ref then
+        return ""
+    end
+
+    return Ref.Text or ""
+end
+
+local function FindRootScreenGui(Selected)
+    if not Selected then
+        return nil
+    end
+
+    if Selected:IsA("ScreenGui") then
+        return Selected
+    end
+
+    return Selected:FindFirstAncestorWhichIsA("ScreenGui")
+end
+
+local function ApplySelectionToInputs(Selected)
+    local Position = Selected and (Selected:GetAttribute("FigmaPosition") or Vector2.new(0, 0)) or Vector2.new(0, 0)
+    local Size = Selected and (Selected:GetAttribute("FigmaSize") or Vector2.new(100, 100)) or Vector2.new(100, 100)
+
+    if Selected and Selected:IsA("GuiObject") then
+        if not Selected:GetAttribute("FigmaPosition") then
+            Position = Vector2.new(Selected.Position.X.Offset, Selected.Position.Y.Offset)
         end
 
-        Hydrate(CreateInstanceCreationButton(Data)) {
-            Parent = SectionFrame
+        if not Selected:GetAttribute("FigmaSize") then
+            Size = Vector2.new(Selected.Size.X.Offset, Selected.Size.Y.Offset)
+        end
+    end
+
+    local ShadowOffset = Selected and (Selected:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)) or Vector2.new(0, 0)
+
+    if InputRefs.XPosition then
+        InputRefs.XPosition.Text = tostring(Position.X)
+    end
+
+    if InputRefs.YPosition then
+        InputRefs.YPosition.Text = tostring(Position.Y)
+    end
+
+    if InputRefs.Width then
+        InputRefs.Width.Text = tostring(Size.X)
+    end
+
+    if InputRefs.Height then
+        InputRefs.Height.Text = tostring(Size.Y)
+    end
+
+    if InputRefs.Name then
+        InputRefs.Name.Text = if Selected then Selected.Name else ""
+    end
+
+    if InputRefs.ImageId then
+        if Selected and (Selected:IsA("ImageLabel") or Selected:IsA("ImageButton")) then
+            InputRefs.ImageId.Text = Selected.Image:gsub("rbxassetid://", "")
+        else
+            InputRefs.ImageId.Text = ""
+        end
+    end
+
+    if InputRefs.AnchorPointX then
+        InputRefs.AnchorPointX.Text = if Selected and Selected:IsA("GuiObject") then tostring(Selected.AnchorPoint.X) else "0"
+    end
+
+    if InputRefs.AnchorPointY then
+        InputRefs.AnchorPointY.Text = if Selected and Selected:IsA("GuiObject") then tostring(Selected.AnchorPoint.Y) else "0"
+    end
+
+    if InputRefs.StrokeThickness then
+        InputRefs.StrokeThickness.Text = tostring(if Selected then Selected:GetAttribute("FigmaStrokeThickness") or 0 else 0)
+    end
+
+    if InputRefs.ShadowX then
+        InputRefs.ShadowX.Text = tostring(ShadowOffset.X)
+    end
+
+    if InputRefs.ShadowY then
+        InputRefs.ShadowY.Text = tostring(ShadowOffset.Y)
+    end
+
+    if InputRefs.ShadowSpread then
+        InputRefs.ShadowSpread.Text = tostring(if Selected then Selected:GetAttribute("FigmaShadowSpread") or 0 else 0)
+    end
+
+    if InputRefs.ShadowRadius then
+        InputRefs.ShadowRadius.Text = tostring(if Selected then Selected:GetAttribute("FigmaShadowRadius") or 0 else 0)
+    end
+
+    if not Selected then
+        return
+    end
+
+    SettingValues.KeepAspectRatio.Value = Selected:GetAttribute("FigmaSetting_IsAspectRatioConstrained")
+    if SettingValues.KeepAspectRatio.Value == nil then
+        SettingValues.KeepAspectRatio.Value = true
+    end
+
+    SettingValues.ClipDescendants.Value = Selected:GetAttribute("FigmaSetting_ClipDescendants")
+    if SettingValues.ClipDescendants.Value == nil then
+        SettingValues.ClipDescendants.Value = true
+    end
+
+    local RootGui = FindRootScreenGui(Selected)
+
+    if RootGui then
+        local Mapping = {
+            ImportFramesAsFrames = {"FigmaSetting_ImportFramesAsFrames", true},
+            ImportTextAsText = {"FigmaSetting_ImportTextAsText", true},
+            ImportStrokesAsUIStroke = {"FigmaSetting_ImportStrokesAsUIStroke", true},
+            ApplyBackgroundColor = {"FigmaSetting_ApplyBackgroundColor", true},
+            ApplyAutoLayout = {"FigmaSetting_ApplyAutoLayout", true},
+            RespectCornerRadius = {"FigmaSetting_RespectAutoImportCornerRadius", true},
+            RespectFrameOpacity = {"FigmaSetting_RespectAutoImportFrameOpacity", true},
         }
+
+        for SettingName, Data in pairs(Mapping) do
+            local AttributeName = Data[1]
+            local DefaultValue = Data[2]
+            local Value = RootGui:GetAttribute(AttributeName)
+
+            if Value == nil then
+                Value = DefaultValue
+            end
+
+            SettingValues[SettingName].Value = Value
+        end
     end
 end
 
-function BuildTypes.TextInputSections(SectionFrame)
-    for _, Data in ipairs(TEXT_INPUT_BUILD_DATA) do
-        Hydrate(CreateTextInputSection(Data)) {
-            Parent = SectionFrame,
-        }
-    end
+local function CollectApplyData(Selected)
+    local PositionAttribute = Selected and Selected:GetAttribute("FigmaPosition") or Vector2.new(0, 0)
+    local SizeAttribute = Selected and Selected:GetAttribute("FigmaSize") or Vector2.new(100, 100)
+    local ShadowOffset = Selected and Selected:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)
 
-    Hydrate(Inputs["Image"]) {
-        Visible = Computed(function()
-            local Success, _ = pcall(function()
-                return SelectedItem:get().Image
-            end)
-
-            return Success
-        end)
+    return {
+        Size = {
+            X = ToNumber(ReadText("Width"), SizeAttribute.X),
+            Y = ToNumber(ReadText("Height"), SizeAttribute.Y),
+        },
+        Position = {
+            X = ToNumber(ReadText("XPosition"), PositionAttribute.X),
+            Y = ToNumber(ReadText("YPosition"), PositionAttribute.Y),
+        },
+        AnchorPoint = {
+            X = ToNumber(ReadText("AnchorPointX"), if Selected and Selected:IsA("GuiObject") then Selected.AnchorPoint.X else 0),
+            Y = ToNumber(ReadText("AnchorPointY"), if Selected and Selected:IsA("GuiObject") then Selected.AnchorPoint.Y else 0),
+        },
+        Name = if ReadText("Name") ~= "" then ReadText("Name") else if Selected then Selected.Name else "",
+        Image = ReadText("ImageId"),
+        Stroke = ToNumber(ReadText("StrokeThickness"), if Selected then Selected:GetAttribute("FigmaStrokeThickness") or 0 else 0),
+        Oblique = 0,
+        Settings = {
+            IsAspectRatioConstrained = SettingValues.KeepAspectRatio.Value,
+            ClipDescendants = SettingValues.ClipDescendants.Value,
+            ImportFramesAsFrames = SettingValues.ImportFramesAsFrames.Value,
+            ImportTextAsText = SettingValues.ImportTextAsText.Value,
+            ImportStrokesAsUIStroke = SettingValues.ImportStrokesAsUIStroke.Value,
+            ApplyBackgroundColor = SettingValues.ApplyBackgroundColor.Value,
+            ApplyAutoLayout = SettingValues.ApplyAutoLayout.Value,
+            RespectAutoImportCornerRadius = SettingValues.RespectCornerRadius.Value,
+            RespectAutoImportFrameOpacity = SettingValues.RespectFrameOpacity.Value,
+        },
+        Shadow = {
+            Offset = Vector2.new(
+                ToNumber(ReadText("ShadowX"), ShadowOffset.X),
+                ToNumber(ReadText("ShadowY"), ShadowOffset.Y)
+            ),
+            Spread = ToNumber(ReadText("ShadowSpread"), if Selected then Selected:GetAttribute("FigmaShadowSpread") or 0 else 0),
+            Radius = ToNumber(ReadText("ShadowRadius"), if Selected then Selected:GetAttribute("FigmaShadowRadius") or 0 else 0),
+        },
     }
 end
 
-function BuildTypes.BooleanSettingInputs(SectionFrame)
-    for _, Data in BOOLEAN_SETTING_INPUT_BUILD_DATA do
-        Hydrate(CreateBooleanSettingInput(Data)) {
-            Parent = SectionFrame,
-        }
+local function RunCallbacks(Callbacks, ...)
+    for _, Callback in ipairs(Callbacks) do
+        Callback(...)
     end
 end
 
-function BuildTypes.AlignmentInputs(SectionFrame)
-    for _, Data in ipairs(ALIGNMENT_INPUT_BUILD_DATA) do
-        Hydrate(CreateTextInputSection(Data)) {
-            Parent = SectionFrame
-        }
+local function ApplyImportSettingsToRoot(RootGui)
+    if not RootGui then
+        return
     end
+
+    RootGui:SetAttribute("FigmaSetting_IsAspectRatioConstrained", SettingValues.KeepAspectRatio.Value)
+    RootGui:SetAttribute("FigmaSetting_ImportFramesAsFrames", SettingValues.ImportFramesAsFrames.Value)
+    RootGui:SetAttribute("FigmaSetting_ImportTextAsText", SettingValues.ImportTextAsText.Value)
+    RootGui:SetAttribute("FigmaSetting_ImportStrokesAsUIStroke", SettingValues.ImportStrokesAsUIStroke.Value)
+    RootGui:SetAttribute("FigmaSetting_ApplyBackgroundColor", SettingValues.ApplyBackgroundColor.Value)
+    RootGui:SetAttribute("FigmaSetting_ApplyAutoLayout", SettingValues.ApplyAutoLayout.Value)
+    RootGui:SetAttribute("FigmaSetting_RespectAutoImportCornerRadius", SettingValues.RespectCornerRadius.Value)
+    RootGui:SetAttribute("FigmaSetting_RespectAutoImportFrameOpacity", SettingValues.RespectFrameOpacity.Value)
 end
 
-function BuildTypes.ImportInputs(SectionFrame)
-    for Index, Data in IMPORT_INPUT_BUILD_DATA do
-        if Data.Type == "BaseButton" then
-            Inputs[Data.Name] = Component "Button" {
-                Enabled = IsItemSelected,
-                Name = Data.Name,
-                Text = Data.Text,
-                LayoutOrder = 1,
-                Size = UDim2.new(1, 0, 0, 30),
-                Parent = SectionFrame,
-                Visible = IsItemSelected,
-        
-                [OnEvent "Activated"] = Keybinds:AddKeybind(`ipt`, {}, function()
-                    if SelectedItem:get() and Inputs["AutoImportData"].Text ~= "" then
-                        local ImportDataJSON = Inputs["AutoImportData"].Text
-                        
-                        local InterpretedData = AppImportInterpreter:InterpretJSONData(ImportDataJSON)
-
-                        if InterpretedData then
-                            Creator:CreateFromData(SelectedItem:get(), InterpretedData)
-                        end
-
-                        Inputs["AutoImportData"].Text = ""
-                    end
-                end).Callback
-            }
-        else
-            Hydrate(CreateTextInputSection({[Index] = Data})) {
-                LayoutOrder = 0,
-                Parent = SectionFrame,
-                Visible = IsItemSelected,
-            }
-        end
-    end
-end
-
--- Functions (extended)
-local function BuildSections()
-    for _, SectionData in BUILD_SECTIONS_DATA do
-        local Section = Component "VerticalCollapsibleSection" {
-            Size = UDim2.new(1, 0, 0, 30),
-            Parent = MainContentList,
-
-            Collapsed = if SectionData.Collapsed ~= nil then SectionData.Collapsed else true,
-            Text = SectionData.Name,
-            Enabled = true,
-
-            [Children] = {
-                New "UIPadding" {
-                    PaddingBottom = UDim.new(0, 8),
-                    PaddingLeft = UDim.new(0, 8),
-                    PaddingRight = UDim.new(0, 8),
-                    PaddingTop = UDim.new(0, 8),
-                },
-                
-                New "UIListLayout" {
-                    Padding = UDim.new(0, 16),
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                },
-            }
-        }
-
-        for _, BuildType in SectionData.Build do
-            BuildTypes[BuildType](Section)
-        end
-    end
-end
-
-local function Apply()
-    if ApplyCallback then
-        local Stroke = tonumber(Inputs["StrokeThickness"].Text) or 0
-        --local Oblique = tonumber(Inputs["ObliqueShadowSize"].Text) or 0
-        local Settings = {}
-
-        for InputIndex, SettingValue in Inputs do
-            if InputIndex:find("Setting_") then
-                local SettingName = InputIndex:gsub("Setting_", "")
-    
-                Settings[SettingName] = SettingValue[1]:get()
-            end
-        end
-
-        ApplyCallback {
-            Size = {
-                X = Inputs["SizeX"].Text,
-                Y = Inputs["SizeY"].Text
-            },
-
-            Position = {
-                X = Inputs["PositionX"].Text,
-                Y = Inputs["PositionY"].Text,
-            },
-
-            AnchorPoint = {
-                X = tonumber(Inputs["AnchorX"].Text) or 0,
-                Y = tonumber(Inputs["AnchorY"].Text) or 0
-            },
-
-            Settings = Settings,
-            Name = Inputs["Name"].Text,
-            Image = Inputs["Image"].Text,
-            Stroke = Stroke,
-            Shadow = {
-                Offset = Vector2.new(tonumber(Inputs["ShadowX"].Text) or 0, tonumber(Inputs["ShadowY"].Text) or 0),
-                Radius = tonumber(Inputs["ShadowSpread"].Text) or 0,
-                Spread = tonumber(Inputs["ShadowRadius"].Text) or 0,
-            }
-            --Oblique = Oblique,
-        }
-    end
+local function BuildSection(Text, Children, Parent, OpenByDefault)
+    return Scope:New(Jian.ListSection, {
+        Text = Text,
+        Parent = Parent,
+        OpenByDefault = OpenByDefault,
+        [Seam.Children] = Children,
+    })
 end
 
 local function BuildInterface()
-    local Background = Component "Background" {
-		Parent = Widget
-	}
+    local ScrollingList = Scope:New(Jian.ScrollingList, {
+        Parent = Widget,
+    })
 
-	MainContentList = Component("ScrollFrame")({
-		UIPadding = New "UIPadding" {
-			PaddingBottom = UDim.new(0, 8),
-			PaddingLeft = UDim.new(0, 8),
-			PaddingRight = UDim.new(0, 8),
-			PaddingTop = UDim.new(0, 8),
-		},
-		
-		UILayout = New "UIListLayout" {
-			Padding = UDim.new(0, 16),
-			SortOrder = Enum.SortOrder.LayoutOrder,
-		},
+    Scope:New(Jian.Background, {
+        Parent = Widget,
+    })
 
-        CanvasScaleConstraint = Enum.ScrollingDirection.X,
-        ZIndex = 1,
-		
-		Parent = Widget,
-	}).Canvas
-	
-	local MainContentMargins = New "UIPadding" {
-		PaddingBottom = UDim.new(0, 8),
-		PaddingLeft = UDim.new(0, 8),
-		PaddingTop = UDim.new(0, 8),
-		PaddingRight = UDim.new(0, 8),
-		Parent = Widget
-	}
-	
-	local TopListPadding = Component "Background" {
-		Size = UDim2.new(1, 0, 0, 0),
-		Parent = MainContentList
-	}
-	
-	local TitleLabel = Component "Title" {
-		Text = "Figma Import Assistant",
-		TextYAlignment = Enum.TextYAlignment.Center,
-		Visible = true,
-		LayoutOrder = 0,
-		Parent = MainContentList,
-	}
+    Scope:New(Jian.Padding, {
+        Parent = ScrollingList,
+    })
 
-    BuildSections()
+    Scope:New(Jian.Text, {
+        Parent = ScrollingList,
+        Visible = ShowNoSelectionWarning,
+        Active = IsDefaultElementEnabled,
+        Text = "Select a UI object (ScreenGui or GuiObject) to start using the plugin.",
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Size = UDim2.new(1, 0, 0, 36),
+    })
 
-    Inputs["ApplyButton"] = Component "Button" {
-        Enabled = IsItemSelected,
-        Name = "Apply",
-        Text = "Apply",
-        LayoutOrder = 5,
+    BuildSection("Figma Properties", {
+        BuildRow({
+            BuildTextInput("XPosition", "X Position", IsAnyUIObjectElementEnabled),
+            BuildTextInput("YPosition", "Y Position", IsAnyUIObjectElementEnabled),
+        }),
+        BuildRow({
+            BuildTextInput("Width", "Width", IsDefaultElementEnabled),
+            BuildTextInput("Height", "Height", IsDefaultElementEnabled),
+        }),
+        BuildRow({
+            BuildTextInput("Name", "Name", IsDefaultElementEnabled),
+            BuildTextInput("ImageId", "Image Id", IsAnyUIObjectElementEnabled),
+        }),
+        BuildRow({
+            BuildTextInput("AnchorPointX", "Anchor Point X", IsAnyUIObjectElementEnabled),
+            BuildTextInput("AnchorPointY", "Anchor Point Y", IsAnyUIObjectElementEnabled),
+        }),
+        BuildRow({
+            BuildTextInput("StrokeThickness", "Stroke Thickness", IsAnyUIObjectElementEnabled),
+            BuildTextInput("ShadowX", "Shadow X Offset", IsAnyUIObjectElementEnabled),
+        }),
+        BuildRow({
+            BuildTextInput("ShadowY", "Shadow Y Offset", IsAnyUIObjectElementEnabled),
+            BuildTextInput("ShadowSpread", "Shadow Spread", IsAnyUIObjectElementEnabled),
+        }),
+        BuildRow({
+            BuildTextInput("ShadowRadius", "Shadow Radius", IsAnyUIObjectElementEnabled),
+        }),
+    }, ScrollingList, true)
+
+    BuildSection("Settings", {
+        BuildRow({
+            BuildCheckbox("Aspect Ratio Constraint", IsAnyUIObjectElementEnabled, SettingValues.KeepAspectRatio, UDim2.fromScale(0.95, 1)),
+        }, 22),
+        BuildRow({
+            BuildCheckbox("Clip Descendants", IsAnyUIObjectElementEnabled, SettingValues.ClipDescendants, UDim2.fromScale(0.95, 1)),
+        }, 22),
+    }, ScrollingList, true)
+
+    BuildSection("Instance Building", {
+        BuildRow({
+            BuildButton("New ImageLabel", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "ImageLabel", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("New ImageButton", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "ImageButton", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("New TextLabel", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "TextLabel", CurrentSelectedInstance.Value)
+            end),
+        }),
+        BuildRow({
+            BuildButton("New TextButton", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "TextButton", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("New TextBox", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "TextBox", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("New Frame", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "Frame", CurrentSelectedInstance.Value)
+            end),
+        }),
+        BuildRow({
+            BuildButton("New ScrollingFrame", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "ScrollingFrame", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("New UICorner", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "UICorner", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("New UIStroke", IsDefaultElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(CreateInstanceCallbacks, "UIStroke", CurrentSelectedInstance.Value)
+            end),
+        }),
+    }, ScrollingList)
+
+    BuildSection("Convert Selected", {
+        BuildRow({
+            BuildButton("To ImageLabel", IsAnyUIObjectElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(ConvertInstanceCallbacks, "ImageLabel", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("To ImageButton", IsAnyUIObjectElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(ConvertInstanceCallbacks, "ImageButton", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("To Frame", IsAnyUIObjectElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(ConvertInstanceCallbacks, "Frame", CurrentSelectedInstance.Value)
+            end),
+        }),
+        BuildRow({
+            BuildButton("To TextLabel", IsAnyUIObjectElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(ConvertInstanceCallbacks, "TextLabel", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("To TextButton", IsAnyUIObjectElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(ConvertInstanceCallbacks, "TextButton", CurrentSelectedInstance.Value)
+            end),
+            BuildButton("To TextBox", IsAnyUIObjectElementEnabled, UDim2.fromScale(0.3, 1), function()
+                RunCallbacks(ConvertInstanceCallbacks, "TextBox", CurrentSelectedInstance.Value)
+            end),
+        }),
+        BuildRow({
+            BuildButton("To ScrollingFrame", IsAnyUIObjectElementEnabled, UDim2.fromScale(0.95, 1), function()
+                RunCallbacks(ConvertInstanceCallbacks, "ScrollingFrame", CurrentSelectedInstance.Value)
+            end),
+        }),
+    }, ScrollingList)
+
+    BuildSection("Image Mapping", {
+        BuildRow({
+            BuildButton("Open Image Mapping Widget", IsAnyUIObjectElementEnabled, UDim2.fromScale(0.95, 1), function()
+                RunCallbacks(OpenImageMapperCallbacks)
+            end),
+        }),
+    }, ScrollingList)
+
+    InputRefs.ImportJSON = Scope:New("TextBox", {
+        MultiLine = true,
+        ClearTextOnFocus = false,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        PlaceholderText = "Paste export JSON here...",
+        Size = UDim2.new(1, 0, 0, 100),
+        Text = "",
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Font = Enum.Font.BuilderSans,
+        TextSize = 14,
+        Active = IsAutoImportElementEnabled,
+        Interactable = IsAutoImportElementEnabled,
+        [Seam.Children] = {
+            Scope:New("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+            }),
+            Scope:New("UIStroke", {
+                Thickness = 1,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                Color = Color3.fromRGB(40, 40, 40),
+            }),
+        },
+    })
+
+    BuildSection("Auto Import", {
+        Scope:New(Jian.Text, {
+            Visible = ShowAutoImportWarning,
+            Active = IsAutoImportElementEnabled,
+            Text = "Auto import requires selecting a ScreenGui.",
+            TextWrapped = true,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Size = UDim2.new(1, 0, 0, 24),
+        }),
+        BuildRow({
+            BuildCheckbox("Aspect Ratio Constraints", IsAutoImportElementEnabled, SettingValues.KeepAspectRatio),
+            BuildCheckbox("Default Opportunistic", IsAutoImportElementEnabled, SettingValues.DefaultOpportunisticMode),
+        }, 22),
+        BuildRow({
+            BuildCheckbox("Import Frames", IsAutoImportElementEnabled, SettingValues.ImportFramesAsFrames),
+            BuildCheckbox("Import Text", IsAutoImportElementEnabled, SettingValues.ImportTextAsText),
+        }, 22),
+        BuildRow({
+            BuildCheckbox("Import Strokes", IsAutoImportElementEnabled, SettingValues.ImportStrokesAsUIStroke),
+            BuildCheckbox("Background Color", IsAutoImportElementEnabled, SettingValues.ApplyBackgroundColor),
+        }, 22),
+        BuildRow({
+            BuildCheckbox("Auto Layout", IsAutoImportElementEnabled, SettingValues.ApplyAutoLayout),
+            BuildCheckbox("Corner Radius", IsAutoImportElementEnabled, SettingValues.RespectCornerRadius),
+        }, 22),
+        BuildRow({
+            BuildCheckbox("Frame Opacity", IsAutoImportElementEnabled, SettingValues.RespectFrameOpacity, UDim2.fromScale(0.95, 1)),
+        }, 22),
+        InputRefs.ImportJSON,
+        BuildRow({
+            BuildButton("Auto Import (Opportunistic)", IsAutoImportElementEnabled, UDim2.fromScale(0.475, 1), function()
+                ApplyImportSettingsToRoot(CurrentSelectedInstance.Value)
+                RunCallbacks(AutoImportCallbacks, "opportunistic", ReadText("ImportJSON"), CurrentSelectedInstance.Value)
+            end),
+            BuildButton("Auto Import (Classic)", IsAutoImportElementEnabled, UDim2.fromScale(0.475, 1), function()
+                ApplyImportSettingsToRoot(CurrentSelectedInstance.Value)
+                RunCallbacks(AutoImportCallbacks, "classic", ReadText("ImportJSON"), CurrentSelectedInstance.Value)
+            end),
+        }),
+    }, ScrollingList, true)
+
+    Scope:New(Jian.TextButton, {
+        Parent = ScrollingList,
         Size = UDim2.new(1, 0, 0, 30),
-        Parent = MainContentList,
+        Text = "Apply Changes",
+        Active = IsDefaultElementEnabled,
+        [Seam.OnEvent "Activated"] = function()
+            local Selected = CurrentSelectedInstance.Value
 
-        [OnEvent "Activated"] = Apply
-    }
+            if not Selected then
+                return
+            end
+
+            local Data = CollectApplyData(Selected)
+            RunCallbacks(ApplyCallbacks, Data, Selected)
+        end,
+    })
 end
 
--- Methods
-function Interface:Init()
-    Widget = Component "Widget" {
-        Id = "FigmaImportAssistant",
-        Name = "Figma Import Assistant",
-        InitialDockTo = "Float",
-        InitialEnabled = false,
-        ForceInitialEnabled = false,
-        FloatingSize = Vector2.new(300, 400),
-        MinimumSize = Vector2.new(300, 400),
-    }
+function Interface.Init()
+    Widget = Scope:New(Jian.Widget, {
+        WidgetId = "FigmaImportAssistant",
+        Title = "Figma Import Assistant",
+        InitialDockState = Enum.InitialDockState.Float,
+        InitialEnabled = true,
+        OverridePreviousState = false,
+        DefaultWidth = 360,
+        DefaultHeight = 560,
+        MinimumWidth = 320,
+        MinimumHeight = 400,
+    })
 
     BuildInterface()
 
-    SearchWidget:Build()
+    Scope:New(SelectionService, {
+        [Seam.OnEvent "SelectionChanged"] = function()
+            local Selection = SelectionService:Get()
+
+            if #Selection ~= 1 then
+                CurrentSelectedInstance.Value = nil
+                ApplySelectionToInputs(nil)
+                return
+            end
+
+            local SelectedObject = Selection[1]
+
+            if SelectedObject:IsA("GuiObject") or SelectedObject:IsA("ScreenGui") then
+                CurrentSelectedInstance.Value = SelectedObject
+                ApplySelectionToInputs(SelectedObject)
+                return
+            end
+
+            CurrentSelectedInstance.Value = nil
+            ApplySelectionToInputs(nil)
+        end,
+    })
 end
 
-function Interface:ToggleVisibility()
+function Interface.ToggleVisibility()
     if Widget then
         Widget.Enabled = not Widget.Enabled
     end
 end
 
-function Interface:OnApply(...)
-    ApplyCallback = ...
+function Interface.OnApply(Callback)
+    table.insert(ApplyCallbacks, Callback)
 end
 
-function Interface:OnSelection(Item)
-    SelectedItem:set(Item)
-    IsItemSelected:set(Item ~= nil)
+function Interface.OnAutoImport(Callback)
+    table.insert(AutoImportCallbacks, Callback)
+end
 
-    if Item == nil then
-        return
-    end
+function Interface.OnCreateInstance(Callback)
+    table.insert(CreateInstanceCallbacks, Callback)
+end
 
-    for InputIndex, SettingValue in Inputs do
-        if InputIndex:find("Setting_") then
-            local AttributeName = InputIndex:gsub("Setting_", "FigmaSetting_")
+function Interface.OnConvertInstance(Callback)
+    table.insert(ConvertInstanceCallbacks, Callback)
+end
 
-            if Item:GetAttribute(AttributeName) ~= nil then
-                SettingValue[1]:set(Item:GetAttribute(AttributeName))
-            else
-                SettingValue[1]:set(SettingValue[2])
-            end
-        end
-    end
+function Interface.OnOpenImageMapper(Callback)
+    table.insert(OpenImageMapperCallbacks, Callback)
+end
 
-    if Item:GetAttribute("FigmaSize") then
-        Inputs["SizeX"].Text = Item:GetAttribute("FigmaSize").X
-        Inputs["SizeY"].Text = Item:GetAttribute("FigmaSize").Y
-    else
-        Inputs["SizeX"].Text = ""
-        Inputs["SizeY"].Text = ""
-    end
-
-    if Item:GetAttribute("FigmaPosition") then
-        Inputs["PositionX"].Text = Item:GetAttribute("FigmaPosition").X
-        Inputs["PositionY"].Text = Item:GetAttribute("FigmaPosition").Y
-    else
-        Inputs["PositionX"].Text = ""
-        Inputs["PositionY"].Text = ""
-    end
-
-    Inputs["ShadowX"].Text = (Item:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)).X or 0
-    Inputs["ShadowY"].Text = (Item:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)).Y or 0
-    Inputs["ShadowSpread"].Text = Item:GetAttribute("FigmaShadowSpread") or 0
-    Inputs["ShadowRadius"].Text = Item:GetAttribute("FigmaShadowRadius") or 0
-
-    Inputs["StrokeThickness"].Text = Item:GetAttribute("FigmaStrokeThickness") or 0
-    --Inputs["ObliqueShadowSize"].Text = Item:GetAttribute("FigmaObliqueSize") or 0
-
-    Inputs["Name"].Text = Item.Name
-    
-    local DidApplyAnchorPoint = pcall(function()
-        Inputs["AnchorX"].Text = Item.AnchorPoint.X
-        Inputs["AnchorY"].Text = Item.AnchorPoint.Y
-    end)
-
-    if not DidApplyAnchorPoint then
-        Inputs["AnchorX"].Text = ""
-        Inputs["AnchorY"].Text = ""
-    end
-
-    local DidApplyImage = pcall(function()
-        Inputs["Image"].Text = Item.Image
-    end)
-
-    if not DidApplyImage then
-        Inputs["Image"].Text = ""
-    end
+function Interface.OnSelection(SelectedInstance)
+    CurrentSelectedInstance.Value = SelectedInstance
+    ApplySelectionToInputs(SelectedInstance)
 end
 
 return Interface
