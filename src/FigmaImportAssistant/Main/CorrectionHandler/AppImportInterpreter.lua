@@ -227,10 +227,6 @@ local function ReadRecursive(parentTable, mode)
         table.insert(ChildTable.Root, Interpretation)
     end
 
-    -- if ParentTable.children then
-    --     ChildTable.Children = ReadRecursive(ParentTable.children)
-    -- end
-
     return ChildTable
 end
 
