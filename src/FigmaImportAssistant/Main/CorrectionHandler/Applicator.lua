@@ -40,26 +40,6 @@ local function EnsureAspectRatioConstraint(selectedInstance : Instance, enabled 
     end
 end
 
-local function ApplyAttributes(object : Instance, attributes : {[string] : any})
-    local Count = 0
-
-    for _ in pairs(attributes) do
-        Count += 1
-    end
-
-    if Count <= 1 then
-        for AttributeName, AttributeValue in pairs(attributes) do
-            object:SetAttribute(AttributeName, AttributeValue)
-        end
-
-        return
-    end
-
-    for AttributeName, AttributeValue in pairs(attributes) do
-        Seam.Attribute(AttributeName)(object, AttributeValue)
-    end
-end
-
 function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[string] : any})
     if not selectedInstance then
         return
@@ -82,12 +62,19 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
         SettingAttributes[`FigmaSetting_{SettingName}`] = SettingValue
     end
 
-    ApplyAttributes(selectedInstance, SettingAttributes)
+    local SettingSeamProperties = {}
+    for AttributeName, AttributeValue in pairs(SettingAttributes) do
+        SettingSeamProperties[Seam.Attribute(AttributeName)] = AttributeValue
+    end
+    Seam.New(selectedInstance, SettingSeamProperties)
 
     if selectedInstance:IsA("ScreenGui") then
-        selectedInstance:SetAttribute("FigmaSize", Size)
-        selectedInstance:SetAttribute("FigmaPosition", Position)
-        selectedInstance.Name = data.Name or selectedInstance.Name
+        Seam.New(selectedInstance, {
+            Name = data.Name or selectedInstance.Name,
+            [Seam.Attribute("FigmaSize")] = Size,
+            [Seam.Attribute("FigmaPosition")] = Position,
+        })
+
         Utility.CreateUndoMarkerEnd()
         return
     end
@@ -111,12 +98,12 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
     local FinalPosition = CorrectedPosition
     
 
-    ApplyAttributes(selectedInstance, {
-        FigmaSize = Size,
-        FigmaPosition = Position,
-        FigmaShadowOffset = ShadowOffset,
-        FigmaShadowRadius = data.Shadow and data.Shadow.Radius or 0,
-        FigmaShadowSpread = data.Shadow and data.Shadow.Spread or 0,
+    Seam.New(selectedInstance, {
+        [Seam.Attribute("FigmaSize")] = Size,
+        [Seam.Attribute("FigmaPosition")] = Position,
+        [Seam.Attribute("FigmaShadowOffset")] = ShadowOffset,
+        [Seam.Attribute("FigmaShadowRadius")] = data.Shadow and data.Shadow.Radius or 0,
+        [Seam.Attribute("FigmaShadowSpread")] = data.Shadow and data.Shadow.Spread or 0,
     })
 
     if selectedInstance.Parent:GetAttribute("FigmaStrokeThickness") then
@@ -124,11 +111,6 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
         FinalSize -= Vector2.new(ParentStrokeOffset, ParentStrokeOffset) * 2
         FinalPosition += Vector2.new(ParentStrokeOffset, ParentStrokeOffset)
     end
-
-    -- if SelectedInstance.Parent:GetAttribute("FigmaObliqueSize") then
-    --     local Oblique = SelectedInstance.Parent:GetAttribute("FigmaObliqueSize") - Oblique
-    --     FinalSize -= Vector2.new(0, Oblique)
-    -- end
 
     if selectedInstance.Parent:GetAttribute("IsFigmaImportGroup") then
         FinalPosition -= selectedInstance.Parent:GetAttribute("FigmaPosition")
@@ -139,13 +121,16 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
             
     ScaledPosition += UDim2.fromScale(ScaledSize.X.Scale * AnchorPoint.X, ScaledSize.Y.Scale * AnchorPoint.Y)
     
-    selectedInstance.ClipsDescendants = data.Settings and data.Settings.ClipDescendants ~= nil and data.Settings.ClipDescendants or selectedInstance.ClipsDescendants
-    selectedInstance.Size = ScaledSize
-    selectedInstance.Position = ScaledPosition
-    selectedInstance.Name = data.Name or selectedInstance.Name
-    selectedInstance.AnchorPoint = AnchorPoint
+    Seam.New(selectedInstance, {
+        ClipsDescendants = data.Settings and data.Settings.ClipDescendants ~= nil and data.Settings.ClipDescendants or selectedInstance.ClipsDescendants,
+        Size = ScaledSize,
+        Position = ScaledPosition,
+        Name = data.Name or selectedInstance.Name,
+        AnchorPoint = AnchorPoint,
+    })
 
     local AspectRatio = if CorrectedSize.Y ~= 0 then CorrectedSize.X / CorrectedSize.Y else 1
+    
     EnsureAspectRatioConstraint(
         selectedInstance,
         data.Settings and data.Settings.IsAspectRatioConstrained == true,
@@ -154,10 +139,9 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
 
     Utility.ApplyImage(selectedInstance, data.Image)
 
-    ApplyAttributes(selectedInstance, {
-        FigmaStrokeThickness = Stroke,
+    Seam.New(selectedInstance, {
+        [Seam.Attribute("FigmaStrokeThickness")] = Stroke,
     })
-    --SelectedInstance:SetAttribute("FigmaObliqueSize", Oblique)
 
     Utility.CreateUndoMarkerEnd()
 end
