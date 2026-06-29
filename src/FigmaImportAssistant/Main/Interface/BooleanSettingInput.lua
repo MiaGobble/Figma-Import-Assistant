@@ -5,9 +5,9 @@ local Fusion = require(Packages.Fusion)
 local Value = Fusion.Value
 local Computed = Fusion.Computed
 
-
 return function(mainContentList, isItemSelected, inputs, selectedItem, data)
     local EnabledValue = Value(data.DefaultValue)
+
     local IsEnabled = Computed(function()
         local IsSelected = isItemSelected:get()
 
@@ -26,6 +26,8 @@ return function(mainContentList, isItemSelected, inputs, selectedItem, data)
         elseif data.Context == "Default" then
             return not Selected:IsA("ScreenGui")
         end
+
+        return false
     end)
 
     local This = Component "Checkbox" {
