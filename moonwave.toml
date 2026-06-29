@@ -1,0 +1,27 @@
+title = "Figma Importer Assistant"
+changelog = false
+classOrder = []
+
+[footer]
+style = "dark"
+copyright = "Copyright © 2026 Mia Gobble"
+
+[docusaurus]
+url = "https://figma-importer.igottic.com"
+baseUrl = "/"
+
+[home]
+enabled = true
+includeReadme = true
+
+[[home.features]]
+title = "Auto Importing"
+description = "Quickly import Figma UI into Roblox."
+
+[[home.features]]
+title = "Image Mapping"
+description = "Bulk-edit images and apply them all instantly."
+
+[[home.features]]
+title = "Open-Source"
+description = "Unlike other options, this one is free!"
