@@ -1,39 +1,34 @@
+-- Services
 local Selection = game:GetService("Selection")
 
+-- Imports
 local Packages = script.Parent.Parent.Parent.Packages
 local Component = require(script.Parent.Parent.Component)
 local BuildSectionFrame = require(script.Parent.SectionFrame)
 local Fusion = require(Packages.Fusion)
-local New = Fusion.New
 local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local Computed = Fusion.Computed
 local Hydrate = Fusion.Hydrate
 local Value = Fusion.Value
 
-local function GetDictionaryLength(Dictionary)
+
+local function GetDictionaryLength(dictionary)
     local Count = 0
-    local NextIndex = next(Dictionary)
 
-    while true do
-        if NextIndex == nil then
-            break
-        end
-
-        NextIndex = next(Dictionary, NextIndex)
-
+    for _ in pairs(dictionary) do
         Count += 1
     end
 
     return Count
 end
 
-return function(MainContentList, IsItemSelected, Inputs, SectionBuildData)
+return function(mainContentList, isItemSelected, inputs, sectionBuildData)
     local Selected = Value(nil)
 
-    local SectionFrame = Hydrate(BuildSectionFrame(MainContentList)) {
+    local SectionFrame = Hydrate(BuildSectionFrame(mainContentList)) {
         Visible = Computed(function()
-            if IsItemSelected:get() and Selected:get() and (not Selected:get():IsA("ScreenGui") or (SectionBuildData.Name or SectionBuildData.SizeX or SectionBuildData.SizeY or SectionBuildData.AutoImportData)) then
+            if isItemSelected:get() and Selected:get() and (not Selected:get():IsA("ScreenGui") or (sectionBuildData.Name or sectionBuildData.SizeX or sectionBuildData.SizeY or sectionBuildData.AutoImportData)) then
                 return true
             else
                 return false
@@ -41,20 +36,20 @@ return function(MainContentList, IsItemSelected, Inputs, SectionBuildData)
         end)
     }
 
-    local InputSize = 1 / (GetDictionaryLength(SectionBuildData) * 1.1)
+    local InputSize = 1 / (GetDictionaryLength(sectionBuildData) * 1.1)
 
-    for Name, Data in SectionBuildData do
+    for Name, Data in pairs(sectionBuildData) do
         local PreviousText = Data.PreviousText or ""
 
         local Input; Input = Component "TextInput" {
             Enabled = Computed(function()
-                return IsItemSelected:get() and Selected:get() and (not Selected:get():IsA("ScreenGui") or (Name == "Name" or Name == "SizeX" or Name == "SizeY" or Name == "AutoImportData"))
+                return isItemSelected:get() and Selected:get() and (not Selected:get():IsA("ScreenGui") or (Name == "Name" or Name == "SizeX" or Name == "SizeY" or Name == "AutoImportData"))
             end),
             Name = Name,
             PlaceholderText = Data.PlaceholderText or Name,
             LayoutOrder = Data.LayoutOrder or 0,
             Text = PreviousText,
-            Size = UDim2.new(InputSize, 0, 1, 0),
+            Size = UDim2.fromScale(InputSize, 1),
             Parent = SectionFrame,
 
             [Children] = Data.Children,
@@ -77,7 +72,7 @@ return function(MainContentList, IsItemSelected, Inputs, SectionBuildData)
             end
         }
 
-        Inputs[Name] = Input
+        inputs[Name] = Input
     end
 
     Selection.SelectionChanged:Connect(function()

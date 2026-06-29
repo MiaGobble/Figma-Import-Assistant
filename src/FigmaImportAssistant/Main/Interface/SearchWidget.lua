@@ -6,25 +6,20 @@ local Keybinds = require(script.Parent.Keybinds)
 local Component = require(script.Parent.Parent.Component)
 local Fusion = require(Packages.Fusion)
 local New = Fusion.New
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
-local Value = Fusion.Value
-local Hydrate = Fusion.Hydrate
-local Computed = Fusion.Computed
 
 -- Variables
-local Plugin = script:FindFirstAncestorOfClass("Plugin")
 local Widget = nil
 
-local function RunSearch(SearchTerm)
-    local Keybinds = Keybinds:GetKeybindsFromSearch(SearchTerm)
 
-    if #Keybinds ~= 1 then
-        print(`No keybinds found for search term: {SearchTerm}`)
+local function RunSearch(searchTerm)
+    local KeybindResults = Keybinds:GetKeybindsFromSearch(searchTerm)
+
+    if #KeybindResults ~= 1 then
+        print(`No keybinds found for search term: {searchTerm}`)
         return
     end
 
-    Keybinds[1]:Run()
+    KeybindResults[1]:Run()
 end
 
 function SearchWidget:Build()
@@ -38,11 +33,11 @@ function SearchWidget:Build()
         MinimumSize = Vector2.new(300, 30),
     }
 
-    local MainContent = Component "Background" {
+        local MainContent = Component "Background" {
 		Parent = Widget
 	}
 	
-	local MainContentMargins = New "UIPadding" {
+    New "UIPadding" {
 		PaddingBottom = UDim.new(0, 8),
 		PaddingLeft = UDim.new(0, 8),
 		PaddingTop = UDim.new(0, 8),
@@ -50,8 +45,8 @@ function SearchWidget:Build()
 		Parent = Widget
 	}
 	
-	local SearchBox = Component "TextInput" {
-        Size = UDim2.new(1, 0, 1, 0),
+    local SearchBox = Component "TextInput" {
+        Size = UDim2.fromScale(1, 1),
         PlaceholderText = "Run Command...",
         Parent = MainContent,
     } :: TextBox

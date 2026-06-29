@@ -1,9 +1,13 @@
 local Converter = {}
 
+-- Services
 local Selection = game:GetService("Selection")
+
+-- Imports
 local Packages = script.Parent.Parent.Parent.Packages
 local Seam = require(Packages.Seam)
 
+-- Constants
 local COMMON_GUI_OBJECT_PROPERTIES = {
     "Name",
     "LayoutOrder",
@@ -47,43 +51,43 @@ local TEXT_PROPERTIES = {
     "TextYAlignment",
 }
 
-local function CopyProperties(Source : Instance, Target : Instance, PropertyList : {string})
-    for _, PropertyName in ipairs(PropertyList) do
+local function CopyProperties(source : Instance, target : Instance, propertyList : {string})
+    for _, PropertyName in ipairs(propertyList) do
         pcall(function()
-            Target[PropertyName] = Source[PropertyName]
+            target[PropertyName] = source[PropertyName]
         end)
     end
 end
 
-function Converter:ConvertInstance(SelectedInstance : Instance, TargetClassName : string)
-    if not SelectedInstance or (not SelectedInstance:IsA("GuiObject") and not SelectedInstance:IsA("ScreenGui")) then
+function Converter:ConvertInstance(selectedInstance : Instance, targetClassName : string)
+    if not selectedInstance or (not selectedInstance:IsA("GuiObject") and not selectedInstance:IsA("ScreenGui")) then
         return nil
     end
 
-    if SelectedInstance.ClassName == TargetClassName then
-        return SelectedInstance
+    if selectedInstance.ClassName == targetClassName then
+        return selectedInstance
     end
 
-    local Parent = SelectedInstance.Parent
+    local Parent = selectedInstance.Parent
 
     if not Parent then
         return nil
     end
 
-    local NewObject = Instance.new(TargetClassName)
+    local NewObject = Instance.new(targetClassName)
     NewObject.Parent = Parent
 
-    CopyProperties(SelectedInstance, NewObject, COMMON_GUI_OBJECT_PROPERTIES)
+    CopyProperties(selectedInstance, NewObject, COMMON_GUI_OBJECT_PROPERTIES)
 
-    if SelectedInstance:IsA("ImageLabel") or SelectedInstance:IsA("ImageButton") then
-        CopyProperties(SelectedInstance, NewObject, IMAGE_PROPERTIES)
+    if selectedInstance:IsA("ImageLabel") or selectedInstance:IsA("ImageButton") then
+        CopyProperties(selectedInstance, NewObject, IMAGE_PROPERTIES)
     end
 
-    if SelectedInstance:IsA("TextLabel") or SelectedInstance:IsA("TextButton") or SelectedInstance:IsA("TextBox") then
-        CopyProperties(SelectedInstance, NewObject, TEXT_PROPERTIES)
+    if selectedInstance:IsA("TextLabel") or selectedInstance:IsA("TextButton") or selectedInstance:IsA("TextBox") then
+        CopyProperties(selectedInstance, NewObject, TEXT_PROPERTIES)
     end
 
-    local Attributes = SelectedInstance:GetAttributes()
+    local Attributes = selectedInstance:GetAttributes()
     local AttributeCount = 0
     for _ in pairs(Attributes) do
         AttributeCount += 1
@@ -99,11 +103,11 @@ function Converter:ConvertInstance(SelectedInstance : Instance, TargetClassName 
         end
     end
 
-    for _, Child in ipairs(SelectedInstance:GetChildren()) do
+    for _, Child in ipairs(selectedInstance:GetChildren()) do
         Child.Parent = NewObject
     end
 
-    SelectedInstance:Destroy()
+    selectedInstance:Destroy()
     Selection:Set({NewObject})
 
     return NewObject

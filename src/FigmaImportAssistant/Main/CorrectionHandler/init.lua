@@ -1,7 +1,9 @@
 local CorrectionHandler = {}
 
+-- Services
 local SelectionService = game:GetService("Selection")
 
+-- Imports
 local Interface = require(script.Parent.Interface)
 local Utility = require(script.Parent.Utility)
 local AppImportInterpreter = require(script.AppImportInterpreter)
@@ -9,23 +11,24 @@ local Creator = require(script.Creator)
 local Applicator = require(script.Applicator)
 local Converter = require(script.Converter)
 
+-- Variables
 local SelectedInstance = nil
 
 function CorrectionHandler:Init()
-    Interface.OnApply(function(Data, Selected)
-        if Selected then
-            Applicator:ApplyChangesFromData(Selected, Data)
+    Interface.OnApply(function(data, selected)
+        if selected then
+            Applicator:ApplyChangesFromData(selected, data)
         end
     end)
 
-    Interface.OnAutoImport(function(Mode, ImportDataJSON, Selected)
-        if not Selected or not Selected:IsA("ScreenGui") then
+    Interface.OnAutoImport(function(mode, importDataJSON, selected)
+        if not selected or not selected:IsA("ScreenGui") then
             warn("Auto import requires a selected ScreenGui")
             return
         end
 
         local Success, InterpretedData = pcall(function()
-            return AppImportInterpreter:InterpretJSONData(ImportDataJSON, Mode)
+            return AppImportInterpreter:InterpretJSONData(importDataJSON, mode)
         end)
 
         if not Success then
@@ -35,28 +38,28 @@ function CorrectionHandler:Init()
 
         if InterpretedData and #InterpretedData.Root > 0 then
             Utility.CreateUndoMarkerStart()
-            Creator:CreateFromData(Selected, InterpretedData, Mode)
+            Creator:CreateFromData(selected, InterpretedData, mode)
             Utility.CreateUndoMarkerEnd()
         end
     end)
 
-    Interface.OnCreateInstance(function(ClassName, Selected)
-        if not Selected or (not Selected:IsA("GuiObject") and not Selected:IsA("ScreenGui")) then
+    Interface.OnCreateInstance(function(className, selected)
+        if not selected or (not selected:IsA("GuiObject") and not selected:IsA("ScreenGui")) then
             return
         end
 
-        local NewObject = Instance.new(ClassName)
-        NewObject.Name = ClassName
-        NewObject.Parent = Selected
+        local NewObject = Instance.new(className)
+        NewObject.Name = className
+        NewObject.Parent = selected
         SelectionService:Set({NewObject})
     end)
 
-    Interface.OnConvertInstance(function(TargetClassName, Selected)
-        if not Selected then
+    Interface.OnConvertInstance(function(targetClassName, selected)
+        if not selected then
             return
         end
 
-        Converter:ConvertInstance(Selected, TargetClassName)
+        Converter:ConvertInstance(selected, targetClassName)
     end)
 
     SelectionService.SelectionChanged:Connect(function()

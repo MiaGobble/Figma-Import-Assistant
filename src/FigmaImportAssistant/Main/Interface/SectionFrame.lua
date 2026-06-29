@@ -1,13 +1,15 @@
+-- Imports
 local Packages = script.Parent.Parent.Parent.Packages
 local Component = require(script.Parent.Parent.Component)
 local Fusion = require(Packages.Fusion)
 local New = Fusion.New
 local Children = Fusion.Children
 
-return function(MainContentList)
+
+return function(mainContentList)
     local Frame = Component "Background" {
         Size = UDim2.new(1, 0, 0, 30),
-        Parent = MainContentList,
+        Parent = mainContentList,
 
         [Children] = {
             New "UIListLayout" {

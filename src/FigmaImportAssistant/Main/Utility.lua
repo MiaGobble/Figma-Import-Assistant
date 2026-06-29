@@ -4,49 +4,42 @@ local Utility = {}
 local Selection = game:GetService("Selection")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
-function Utility.GetDictionaryLength(Dictionary)
+function Utility.GetDictionaryLength(dictionary)
     local Count = 0
-    local NextIndex = next(Dictionary)
 
-    while true do
-        if NextIndex == nil then
-            break
-        end
-
-        NextIndex = next(Dictionary, NextIndex)
-
+    for _ in pairs(dictionary) do
         Count += 1
     end
 
     return Count
 end
 
-function Utility.GetParentProperties(Parent)
+function Utility.GetParentProperties(parent)
     local Size = Vector2.new(1920, 1080)
     local Position = Vector2.new(0, 0)
 
-    if Parent:GetAttribute("FigmaSize") then
-        Size = Parent:GetAttribute("FigmaSize")
+    if parent:GetAttribute("FigmaSize") then
+        Size = parent:GetAttribute("FigmaSize")
     end
 
-    if Parent:GetAttribute("FigmaPosition") then
-        Position = Parent:GetAttribute("FigmaPosition")
+    if parent:GetAttribute("FigmaPosition") then
+        Position = parent:GetAttribute("FigmaPosition")
     end
 
     return Size, Position
 end
 
-function Utility.ConvertToContextualScale(Object : Instance, Pixels : Vector2)
-    local ParentSize, ParentPosition = Utility.GetParentProperties(Object.Parent)
-    local Scale = (Pixels / ParentSize)
+function Utility.ConvertToContextualScale(object : Instance, pixels : Vector2)
+    local ParentSize = Utility.GetParentProperties(object.Parent)
+    local Scale = (pixels / ParentSize)
 
     return UDim2.fromScale(Scale.X, Scale.Y)
 end
 
-function Utility.ApplyImage(ImageLabel : Instance, Image : string)
+function Utility.ApplyImage(imageLabel : Instance, image : string)
     pcall(function()
-        Image = Image:gsub("rbxassetid://", "")
-        ImageLabel.Image = "rbxassetid://" .. Image
+        image = image:gsub("rbxassetid://", "")
+        imageLabel.Image = "rbxassetid://" .. image
     end)
 end
 

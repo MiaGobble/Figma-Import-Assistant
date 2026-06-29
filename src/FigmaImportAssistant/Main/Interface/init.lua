@@ -1,11 +1,14 @@
 local Interface = {}
 
+-- Services
 local SelectionService = game:GetService("Selection")
 
+-- Imports
 local Packages = script.Parent.Parent.Packages
 local Seam = require(Packages.Seam)
 local Jian = require(Packages.Jian)
 
+-- Variables
 local Scope = Seam.Scope(Seam)
 local Widget = nil
 local CurrentSelectedInstance = Scope:Value(nil)
@@ -53,69 +56,70 @@ local ShowAutoImportWarning = Scope:Computed(function(Use)
     return Selected == nil or not Selected:IsA("ScreenGui")
 end)
 
-local function ToNumber(Value, Fallback)
-    local Number = tonumber(Value)
+
+local function ToNumber(value, fallback)
+    local Number = tonumber(value)
 
     if Number == nil then
-        return Fallback
+        return fallback
     end
 
     return Number
 end
 
-local function RegisterInput(Key, Input)
-    InputRefs[Key] = Input
-    return Input
+local function RegisterInput(key, input)
+    InputRefs[key] = input
+    return input
 end
 
-local function BuildRow(Children, Height, Padding)
+local function BuildRow(children, height, padding)
     local ChildList = {
         Scope:New(Jian.ListLayout, {
             FillDirection = Enum.FillDirection.Horizontal,
             HorizontalAlignment = Enum.HorizontalAlignment.Center,
-            Padding = UDim.new(0, Padding or 8),
+            Padding = UDim.new(0, padding or 8),
         }),
     }
 
-    for _, Child in ipairs(Children) do
+    for _, Child in ipairs(children) do
         table.insert(ChildList, Child)
     end
 
     return Scope:New("Frame", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, Height or 30),
+        Size = UDim2.new(1, 0, 0, height or 30),
         [Seam.Children] = ChildList,
     })
 end
 
-local function BuildTextInput(Key, Title, ActiveState, Width)
-    return RegisterInput(Key, Scope:New(Jian.TextBox, {
-        Title = Title,
-        Size = Width or UDim2.fromScale(0.45, 1),
-        Active = ActiveState,
+local function BuildTextInput(key, title, activeState, width)
+    return RegisterInput(key, Scope:New(Jian.TextBox, {
+        Title = title,
+        Size = width or UDim2.fromScale(0.45, 1),
+        Active = activeState,
     }))
 end
 
-local function BuildCheckbox(Title, ActiveState, ValueState, Width)
+local function BuildCheckbox(title, activeState, valueState, width)
     return Scope:New(Jian.Checkbox, {
-        Title = Title,
-        Size = Width or UDim2.fromScale(0.45, 1),
-        Active = ActiveState,
-        Value = ValueState,
+        Title = title,
+        Size = width or UDim2.fromScale(0.45, 1),
+        Active = activeState,
+        Value = valueState,
     })
 end
 
-local function BuildButton(Text, ActiveState, Width, Callback)
+local function BuildButton(text, activeState, width, callback)
     return Scope:New(Jian.TextButton, {
-        Text = Text,
-        Size = Width or UDim2.fromScale(0.3, 1),
-        Active = ActiveState,
-        [Seam.OnEvent "Activated"] = Callback,
+        Text = text,
+        Size = width or UDim2.fromScale(0.3, 1),
+        Active = activeState,
+        [Seam.OnEvent "Activated"] = callback,
     })
 end
 
-local function ReadText(Key)
-    local Ref = InputRefs[Key]
+local function ReadText(key)
+    local Ref = InputRefs[key]
 
     if not Ref then
         return ""
@@ -124,33 +128,33 @@ local function ReadText(Key)
     return Ref.Text or ""
 end
 
-local function FindRootScreenGui(Selected)
-    if not Selected then
+local function FindRootScreenGui(selected)
+    if not selected then
         return nil
     end
 
-    if Selected:IsA("ScreenGui") then
-        return Selected
+    if selected:IsA("ScreenGui") then
+        return selected
     end
 
-    return Selected:FindFirstAncestorWhichIsA("ScreenGui")
+    return selected:FindFirstAncestorWhichIsA("ScreenGui")
 end
 
-local function ApplySelectionToInputs(Selected)
-    local Position = Selected and (Selected:GetAttribute("FigmaPosition") or Vector2.new(0, 0)) or Vector2.new(0, 0)
-    local Size = Selected and (Selected:GetAttribute("FigmaSize") or Vector2.new(100, 100)) or Vector2.new(100, 100)
+local function ApplySelectionToInputs(selected)
+    local Position = selected and (selected:GetAttribute("FigmaPosition") or Vector2.new(0, 0)) or Vector2.new(0, 0)
+    local Size = selected and (selected:GetAttribute("FigmaSize") or Vector2.new(100, 100)) or Vector2.new(100, 100)
 
-    if Selected and Selected:IsA("GuiObject") then
-        if not Selected:GetAttribute("FigmaPosition") then
-            Position = Vector2.new(Selected.Position.X.Offset, Selected.Position.Y.Offset)
+    if selected and selected:IsA("GuiObject") then
+        if not selected:GetAttribute("FigmaPosition") then
+            Position = Vector2.new(selected.Position.X.Offset, selected.Position.Y.Offset)
         end
 
-        if not Selected:GetAttribute("FigmaSize") then
-            Size = Vector2.new(Selected.Size.X.Offset, Selected.Size.Y.Offset)
+        if not selected:GetAttribute("FigmaSize") then
+            Size = Vector2.new(selected.Size.X.Offset, selected.Size.Y.Offset)
         end
     end
 
-    local ShadowOffset = Selected and (Selected:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)) or Vector2.new(0, 0)
+    local ShadowOffset = selected and (selected:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)) or Vector2.new(0, 0)
 
     if InputRefs.XPosition then
         InputRefs.XPosition.Text = tostring(Position.X)
@@ -169,27 +173,27 @@ local function ApplySelectionToInputs(Selected)
     end
 
     if InputRefs.Name then
-        InputRefs.Name.Text = if Selected then Selected.Name else ""
+        InputRefs.Name.Text = if selected then selected.Name else ""
     end
 
     if InputRefs.ImageId then
-        if Selected and (Selected:IsA("ImageLabel") or Selected:IsA("ImageButton")) then
-            InputRefs.ImageId.Text = Selected.Image:gsub("rbxassetid://", "")
+        if selected and (selected:IsA("ImageLabel") or selected:IsA("ImageButton")) then
+            InputRefs.ImageId.Text = selected.Image:gsub("rbxassetid://", "")
         else
             InputRefs.ImageId.Text = ""
         end
     end
 
     if InputRefs.AnchorPointX then
-        InputRefs.AnchorPointX.Text = if Selected and Selected:IsA("GuiObject") then tostring(Selected.AnchorPoint.X) else "0"
+        InputRefs.AnchorPointX.Text = if selected and selected:IsA("GuiObject") then tostring(selected.AnchorPoint.X) else "0"
     end
 
     if InputRefs.AnchorPointY then
-        InputRefs.AnchorPointY.Text = if Selected and Selected:IsA("GuiObject") then tostring(Selected.AnchorPoint.Y) else "0"
+        InputRefs.AnchorPointY.Text = if selected and selected:IsA("GuiObject") then tostring(selected.AnchorPoint.Y) else "0"
     end
 
     if InputRefs.StrokeThickness then
-        InputRefs.StrokeThickness.Text = tostring(if Selected then Selected:GetAttribute("FigmaStrokeThickness") or 0 else 0)
+        InputRefs.StrokeThickness.Text = tostring(if selected then selected:GetAttribute("FigmaStrokeThickness") or 0 else 0)
     end
 
     if InputRefs.ShadowX then
@@ -201,28 +205,28 @@ local function ApplySelectionToInputs(Selected)
     end
 
     if InputRefs.ShadowSpread then
-        InputRefs.ShadowSpread.Text = tostring(if Selected then Selected:GetAttribute("FigmaShadowSpread") or 0 else 0)
+        InputRefs.ShadowSpread.Text = tostring(if selected then selected:GetAttribute("FigmaShadowSpread") or 0 else 0)
     end
 
     if InputRefs.ShadowRadius then
-        InputRefs.ShadowRadius.Text = tostring(if Selected then Selected:GetAttribute("FigmaShadowRadius") or 0 else 0)
+        InputRefs.ShadowRadius.Text = tostring(if selected then selected:GetAttribute("FigmaShadowRadius") or 0 else 0)
     end
 
-    if not Selected then
+    if not selected then
         return
     end
 
-    SettingValues.KeepAspectRatio.Value = Selected:GetAttribute("FigmaSetting_IsAspectRatioConstrained")
+    SettingValues.KeepAspectRatio.Value = selected:GetAttribute("FigmaSetting_IsAspectRatioConstrained")
     if SettingValues.KeepAspectRatio.Value == nil then
         SettingValues.KeepAspectRatio.Value = true
     end
 
-    SettingValues.ClipDescendants.Value = Selected:GetAttribute("FigmaSetting_ClipDescendants")
+    SettingValues.ClipDescendants.Value = selected:GetAttribute("FigmaSetting_ClipDescendants")
     if SettingValues.ClipDescendants.Value == nil then
         SettingValues.ClipDescendants.Value = true
     end
 
-    local RootGui = FindRootScreenGui(Selected)
+    local RootGui = FindRootScreenGui(selected)
 
     if RootGui then
         local Mapping = {
@@ -249,10 +253,10 @@ local function ApplySelectionToInputs(Selected)
     end
 end
 
-local function CollectApplyData(Selected)
-    local PositionAttribute = Selected and Selected:GetAttribute("FigmaPosition") or Vector2.new(0, 0)
-    local SizeAttribute = Selected and Selected:GetAttribute("FigmaSize") or Vector2.new(100, 100)
-    local ShadowOffset = Selected and Selected:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)
+local function CollectApplyData(selected)
+    local PositionAttribute = selected and selected:GetAttribute("FigmaPosition") or Vector2.new(0, 0)
+    local SizeAttribute = selected and selected:GetAttribute("FigmaSize") or Vector2.new(100, 100)
+    local ShadowOffset = selected and selected:GetAttribute("FigmaShadowOffset") or Vector2.new(0, 0)
 
     return {
         Size = {
@@ -264,12 +268,12 @@ local function CollectApplyData(Selected)
             Y = ToNumber(ReadText("YPosition"), PositionAttribute.Y),
         },
         AnchorPoint = {
-            X = ToNumber(ReadText("AnchorPointX"), if Selected and Selected:IsA("GuiObject") then Selected.AnchorPoint.X else 0),
-            Y = ToNumber(ReadText("AnchorPointY"), if Selected and Selected:IsA("GuiObject") then Selected.AnchorPoint.Y else 0),
+            X = ToNumber(ReadText("AnchorPointX"), if selected and selected:IsA("GuiObject") then selected.AnchorPoint.X else 0),
+            Y = ToNumber(ReadText("AnchorPointY"), if selected and selected:IsA("GuiObject") then selected.AnchorPoint.Y else 0),
         },
-        Name = if ReadText("Name") ~= "" then ReadText("Name") else if Selected then Selected.Name else "",
+        Name = if ReadText("Name") ~= "" then ReadText("Name") else if selected then selected.Name else "",
         Image = ReadText("ImageId"),
-        Stroke = ToNumber(ReadText("StrokeThickness"), if Selected then Selected:GetAttribute("FigmaStrokeThickness") or 0 else 0),
+        Stroke = ToNumber(ReadText("StrokeThickness"), if selected then selected:GetAttribute("FigmaStrokeThickness") or 0 else 0),
         Oblique = 0,
         Settings = {
             IsAspectRatioConstrained = SettingValues.KeepAspectRatio.Value,
@@ -287,39 +291,39 @@ local function CollectApplyData(Selected)
                 ToNumber(ReadText("ShadowX"), ShadowOffset.X),
                 ToNumber(ReadText("ShadowY"), ShadowOffset.Y)
             ),
-            Spread = ToNumber(ReadText("ShadowSpread"), if Selected then Selected:GetAttribute("FigmaShadowSpread") or 0 else 0),
-            Radius = ToNumber(ReadText("ShadowRadius"), if Selected then Selected:GetAttribute("FigmaShadowRadius") or 0 else 0),
+            Spread = ToNumber(ReadText("ShadowSpread"), if selected then selected:GetAttribute("FigmaShadowSpread") or 0 else 0),
+            Radius = ToNumber(ReadText("ShadowRadius"), if selected then selected:GetAttribute("FigmaShadowRadius") or 0 else 0),
         },
     }
 end
 
-local function RunCallbacks(Callbacks, ...)
-    for _, Callback in ipairs(Callbacks) do
+local function RunCallbacks(callbacks, ...)
+    for _, Callback in ipairs(callbacks) do
         Callback(...)
     end
 end
 
-local function ApplyImportSettingsToRoot(RootGui)
-    if not RootGui then
+local function ApplyImportSettingsToRoot(rootGui)
+    if not rootGui then
         return
     end
 
-    RootGui:SetAttribute("FigmaSetting_IsAspectRatioConstrained", SettingValues.KeepAspectRatio.Value)
-    RootGui:SetAttribute("FigmaSetting_ImportFramesAsFrames", SettingValues.ImportFramesAsFrames.Value)
-    RootGui:SetAttribute("FigmaSetting_ImportTextAsText", SettingValues.ImportTextAsText.Value)
-    RootGui:SetAttribute("FigmaSetting_ImportStrokesAsUIStroke", SettingValues.ImportStrokesAsUIStroke.Value)
-    RootGui:SetAttribute("FigmaSetting_ApplyBackgroundColor", SettingValues.ApplyBackgroundColor.Value)
-    RootGui:SetAttribute("FigmaSetting_ApplyAutoLayout", SettingValues.ApplyAutoLayout.Value)
-    RootGui:SetAttribute("FigmaSetting_RespectAutoImportCornerRadius", SettingValues.RespectCornerRadius.Value)
-    RootGui:SetAttribute("FigmaSetting_RespectAutoImportFrameOpacity", SettingValues.RespectFrameOpacity.Value)
+    rootGui:SetAttribute("FigmaSetting_IsAspectRatioConstrained", SettingValues.KeepAspectRatio.Value)
+    rootGui:SetAttribute("FigmaSetting_ImportFramesAsFrames", SettingValues.ImportFramesAsFrames.Value)
+    rootGui:SetAttribute("FigmaSetting_ImportTextAsText", SettingValues.ImportTextAsText.Value)
+    rootGui:SetAttribute("FigmaSetting_ImportStrokesAsUIStroke", SettingValues.ImportStrokesAsUIStroke.Value)
+    rootGui:SetAttribute("FigmaSetting_ApplyBackgroundColor", SettingValues.ApplyBackgroundColor.Value)
+    rootGui:SetAttribute("FigmaSetting_ApplyAutoLayout", SettingValues.ApplyAutoLayout.Value)
+    rootGui:SetAttribute("FigmaSetting_RespectAutoImportCornerRadius", SettingValues.RespectCornerRadius.Value)
+    rootGui:SetAttribute("FigmaSetting_RespectAutoImportFrameOpacity", SettingValues.RespectFrameOpacity.Value)
 end
 
-local function BuildSection(Text, Children, Parent, OpenByDefault)
+local function BuildSection(text, children, parent, openByDefault)
     return Scope:New(Jian.ListSection, {
-        Text = Text,
-        Parent = Parent,
-        OpenByDefault = OpenByDefault,
-        [Seam.Children] = Children,
+        Text = text,
+        Parent = parent,
+        OpenByDefault = openByDefault,
+        [Seam.Children] = children,
     })
 end
 

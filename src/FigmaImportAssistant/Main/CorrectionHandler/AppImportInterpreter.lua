@@ -1,5 +1,6 @@
 local AppImportInterpreter = {}
 
+-- Constants
 local TAG_ACTIONS = {
     ["GROUP"] = "BreakAfter",
     ["IGNORE"] = "Continue",
@@ -10,30 +11,31 @@ local TAG_ACTIONS = {
     ["TYPE_SCROLLING_FRAME"] = "ClassScrollingFrame",
 }
 
+-- Services
 local HttpService = game:GetService("HttpService")
 
-local function ResolveMode(Mode)
-    if type(Mode) ~= "string" then
+local function ResolveMode(mode)
+    if type(mode) ~= "string" then
         return "classic"
     end
 
-    Mode = string.lower(Mode)
+    mode = string.lower(mode)
 
-    if Mode == "opportunistic" then
+    if mode == "opportunistic" then
         return "opportunistic"
     end
 
     return "classic"
 end
 
-local function GetOpacityAndColor(Child)
-    local Opacity = Child.opacity or 1
+local function GetOpacityAndColor(child)
+    local Opacity = child.opacity or 1
     local Color = Color3.fromRGB(255, 255, 255)
 
-    if Child.fills then
+    if child.fills then
         Opacity = 0
 
-        for _, Fill in ipairs(Child.fills) do
+        for _, Fill in ipairs(child.fills) do
             if Fill.type == "SOLID" then
                 Color = Color3.fromRGB(Fill.color.r * 255, Fill.color.g * 255, Fill.color.b * 255)
             end
@@ -45,8 +47,8 @@ local function GetOpacityAndColor(Child)
     return Opacity, Color
 end
 
-local function GetStrokeColor(Child)
-    local Strokes = Child.strokes
+local function GetStrokeColor(child)
+    local Strokes = child.strokes
     local StrokeColor = Color3.fromRGB(255, 255, 255)
 
     if type(Strokes) ~= "table" then
@@ -63,11 +65,11 @@ local function GetStrokeColor(Child)
     return StrokeColor
 end
 
-local function CompileShadowData(Child)
+local function CompileShadowData(child)
     local ShadowData = {}
 
-    if Child.effects then
-        for _, Effect in ipairs(Child.effects) do
+    if child.effects then
+        for _, Effect in ipairs(child.effects) do
             if Effect.type == "DROP_SHADOW" then
                 if Effect.visible == false then
                     continue
@@ -107,12 +109,12 @@ local function CompileShadowData(Child)
     }
 end
 
-local function ReadRecursive(ParentTable, Mode)
+local function ReadRecursive(parentTable, mode)
     local ChildTable = {
         Root = {},
     }
 
-    for _, Child in ipairs(ParentTable) do
+    for _, Child in ipairs(parentTable) do
         local Opacity, Color = GetOpacityAndColor(Child)
         local StrokeColor = GetStrokeColor(Child)
 
@@ -148,7 +150,7 @@ local function ReadRecursive(ParentTable, Mode)
 
         local DefaultType = "ImageLabel"
 
-        if Mode == "opportunistic" then
+        if mode == "opportunistic" then
             if Child.type == "GROUP" or Child.type == "FRAME" then
                 DefaultType = "Frame"
             elseif IsText then
@@ -217,7 +219,7 @@ local function ReadRecursive(ParentTable, Mode)
         }
 
         if Child.children then
-            Interpretation.Children = ReadRecursive(Child.children, Mode)
+            Interpretation.Children = ReadRecursive(Child.children, mode)
         else
             Interpretation.Children = {}
         end
@@ -232,15 +234,15 @@ local function ReadRecursive(ParentTable, Mode)
     return ChildTable
 end
 
-function AppImportInterpreter:InterpretJSONData(JSONData : string, Mode : string)
-    local Data = HttpService:JSONDecode(JSONData)
-    local Interpretation = ReadRecursive(Data, ResolveMode(Mode))
+function AppImportInterpreter:InterpretJSONData(jsonData : string, mode : string)
+    local Data = HttpService:JSONDecode(jsonData)
+    local Interpretation = ReadRecursive(Data, ResolveMode(mode))
 
     return Interpretation
 end
 
-function AppImportInterpreter:GetActionsFromName(Name : string)
-    local RawTags = string.split(Name, "@")
+function AppImportInterpreter:GetActionsFromName(name : string)
+    local RawTags = string.split(name, "@")
     local BaseName = RawTags[1]
     local Actions = {}
 

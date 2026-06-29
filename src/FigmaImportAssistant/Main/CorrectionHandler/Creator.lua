@@ -1,34 +1,35 @@
 local Creator = {}
 
+-- Constants
 local SIZE_DERITIVATIVE_REF = Vector2.new(1920, 1080)
-
 local FONT_LOOKUP_BY_NORMALIZED_NAME = {}
 
-for _, FontItem in ipairs(Enum.Font:GetEnumItems()) do
-    local EnumName = string.lower(FontItem.Name)
-    FONT_LOOKUP_BY_NORMALIZED_NAME[EnumName] = FontItem
-    FONT_LOOKUP_BY_NORMALIZED_NAME[(EnumName:gsub("[^%w]", ""))] = FontItem
+for _, fontItem in ipairs(Enum.Font:GetEnumItems()) do
+    local enumName = string.lower(fontItem.Name)
+    FONT_LOOKUP_BY_NORMALIZED_NAME[enumName] = fontItem
+    FONT_LOOKUP_BY_NORMALIZED_NAME[(enumName:gsub("[^%w]", ""))] = fontItem
 end
 
+-- Imports
 local Applicator = require(script.Parent.Applicator)
 local AppImportInterpreter = require(script.Parent.AppImportInterpreter)
 
-local function InterpretActions(Name : string)
-    local Actions, NewName = AppImportInterpreter:GetActionsFromName(Name)
+local function InterpretActions(name : string)
+    local Actions, NewName = AppImportInterpreter:GetActionsFromName(name)
 
     return Actions, NewName
 end
 
-local function GetGuiSizeDerivative(Gui : ScreenGui)
-    local Size = Gui:GetAttribute("FigmaSize") or SIZE_DERITIVATIVE_REF
+local function GetGuiSizeDerivative(gui : ScreenGui)
+    local Size = gui:GetAttribute("FigmaSize") or SIZE_DERITIVATIVE_REF
     local Magnitude = (Size / SIZE_DERITIVATIVE_REF).Magnitude
 
     return Magnitude
 end
 
-local function ResolveFontFromFigma(Family, Style)
-    local FamilyName = string.lower(tostring(Family or ""))
-    local StyleName = string.lower(tostring(Style or ""))
+local function ResolveFontFromFigma(family, style)
+    local FamilyName = string.lower(tostring(family or ""))
+    local StyleName = string.lower(tostring(style or ""))
     local NormalizedFamilyName = FamilyName:gsub("[^%w]", "")
 
     local DirectMatch = FONT_LOOKUP_BY_NORMALIZED_NAME[FamilyName] or FONT_LOOKUP_BY_NORMALIZED_NAME[NormalizedFamilyName]
@@ -110,79 +111,79 @@ local function ResolveFontFromFigma(Family, Style)
     return Enum.Font.BuilderSans
 end
 
-local function ApplyImportedTextProperties(Object : Instance, Child : {}, Gui : ScreenGui)
-    local RespectText = Gui:GetAttribute("FigmaSetting_ImportTextAsText") ~= false
+local function ApplyImportedTextProperties(object : Instance, child : {}, gui : ScreenGui)
+    local RespectText = gui:GetAttribute("FigmaSetting_ImportTextAsText") ~= false
 
     if not RespectText then
         return
     end
 
-    if not (Object:IsA("TextLabel") or Object:IsA("TextButton") or Object:IsA("TextBox")) then
+    if not (object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox")) then
         return
     end
 
-    Object.Text = Child.Text or Object.Text
-    Object.TextSize = tonumber(Child.TextSize) or Object.TextSize
-    Object.TextColor3 = Child.TextColor or Object.TextColor3
-    Object.Font = ResolveFontFromFigma(Child.TextFontFamily, Child.TextFontStyle)
+    object.Text = child.Text or object.Text
+    object.TextSize = tonumber(child.TextSize) or object.TextSize
+    object.TextColor3 = child.TextColor or object.TextColor3
+    object.Font = ResolveFontFromFigma(child.TextFontFamily, child.TextFontStyle)
 end
 
-local function ApplyOpportunisticEnhancements(Object : Instance, Child : {}, Gui : ScreenGui)
-    local RespectProperties = Gui:GetAttribute("FigmaSetting_ApplyBackgroundColor") ~= false
-    local RespectStroke = Gui:GetAttribute("FigmaSetting_ImportStrokesAsUIStroke") ~= false
-    local RespectAutoLayout = Gui:GetAttribute("FigmaSetting_ApplyAutoLayout") ~= false
+local function ApplyOpportunisticEnhancements(object : Instance, child : {}, gui : ScreenGui)
+    local RespectProperties = gui:GetAttribute("FigmaSetting_ApplyBackgroundColor") ~= false
+    local RespectStroke = gui:GetAttribute("FigmaSetting_ImportStrokesAsUIStroke") ~= false
+    local RespectAutoLayout = gui:GetAttribute("FigmaSetting_ApplyAutoLayout") ~= false
 
-    if Object:IsA("TextLabel") then
-        Object.BackgroundTransparency = 1
+    if object:IsA("TextLabel") then
+        object.BackgroundTransparency = 1
     end
 
-    if Object:IsA("Frame") and RespectProperties then
-        Object.BackgroundTransparency = 1 - (Child.Opacity or 1)
-        Object.BorderSizePixel = 0
-        Object.BackgroundColor3 = Child.Color or Color3.fromRGB(255, 255, 255)
+    if object:IsA("Frame") and RespectProperties then
+        object.BackgroundTransparency = 1 - (child.Opacity or 1)
+        object.BorderSizePixel = 0
+        object.BackgroundColor3 = child.Color or Color3.fromRGB(255, 255, 255)
     end
 
-    if Object:IsA("GuiObject") then
-        local ExistingStroke = Object:FindFirstChildOfClass("UIStroke")
-        local IsImageClass = Object:IsA("ImageLabel") or Object:IsA("ImageButton")
+    if object:IsA("GuiObject") then
+        local ExistingStroke = object:FindFirstChildOfClass("UIStroke")
+        local IsImageClass = object:IsA("ImageLabel") or object:IsA("ImageButton")
 
         if IsImageClass then
             if ExistingStroke then
                 ExistingStroke:Destroy()
             end
-        elseif Child.HasStroke and RespectStroke then
+        elseif child.HasStroke and RespectStroke then
             if not ExistingStroke then
                 ExistingStroke = Instance.new("UIStroke")
-                ExistingStroke.Parent = Object
+                ExistingStroke.Parent = object
             end
 
             ExistingStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-            ExistingStroke.Thickness = tonumber(Child.Stroke) or 1
-            ExistingStroke.Color = Child.StrokeColor or Child.Color or Color3.fromRGB(255, 255, 255)
+            ExistingStroke.Thickness = tonumber(child.Stroke) or 1
+            ExistingStroke.Color = child.StrokeColor or child.Color or Color3.fromRGB(255, 255, 255)
         elseif ExistingStroke then
             ExistingStroke:Destroy()
         end
     end
 
-    if Child.HasAutoLayout and RespectAutoLayout and (Object:IsA("Frame") or Object:IsA("ScrollingFrame")) then
-        local ExistingLayout = Object:FindFirstChildOfClass("UIListLayout")
+    if child.HasAutoLayout and RespectAutoLayout and (object:IsA("Frame") or object:IsA("ScrollingFrame")) then
+        local ExistingLayout = object:FindFirstChildOfClass("UIListLayout")
 
         if not ExistingLayout then
             ExistingLayout = Instance.new("UIListLayout")
-            ExistingLayout.Parent = Object
+            ExistingLayout.Parent = object
         end
 
-        local IsHorizontal = Child.LayoutMode == "HORIZONTAL"
+        local IsHorizontal = child.LayoutMode == "HORIZONTAL"
         ExistingLayout.FillDirection = if IsHorizontal then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
-        ExistingLayout.Wraps = Child.LayoutWrap == "WRAP"
-        ExistingLayout.Padding = UDim.new(0, tonumber(Child.LayoutSpacing) or 0)
+        ExistingLayout.Wraps = child.LayoutWrap == "WRAP"
+        ExistingLayout.Padding = UDim.new(0, tonumber(child.LayoutSpacing) or 0)
 
         -- Flex behavior derived from Figma sizing modes.
         ExistingLayout.HorizontalFlex = Enum.UIFlexAlignment.None
         ExistingLayout.VerticalFlex = Enum.UIFlexAlignment.None
 
-        local PrimarySizing = Child.PrimaryAxisSizingMode
-        local CounterSizing = Child.CounterAxisSizingMode
+        local PrimarySizing = child.PrimaryAxisSizingMode
+        local CounterSizing = child.CounterAxisSizingMode
 
         if PrimarySizing == "AUTO" then
             if IsHorizontal then
@@ -200,7 +201,7 @@ local function ApplyOpportunisticEnhancements(Object : Instance, Child : {}, Gui
             end
         end
 
-        if Child.PrimaryAxisAlignItems == "SPACE_BETWEEN" then
+        if child.PrimaryAxisAlignItems == "SPACE_BETWEEN" then
             if IsHorizontal then
                 ExistingLayout.HorizontalFlex = Enum.UIFlexAlignment.SpaceBetween
             else
@@ -208,7 +209,7 @@ local function ApplyOpportunisticEnhancements(Object : Instance, Child : {}, Gui
             end
         end
 
-        local PrimaryAlignment = Child.PrimaryAxisAlignItems
+        local PrimaryAlignment = child.PrimaryAxisAlignItems
         if PrimaryAlignment == "MIN" then
             ExistingLayout.HorizontalAlignment = if IsHorizontal then Enum.HorizontalAlignment.Left else Enum.HorizontalAlignment.Center
             ExistingLayout.VerticalAlignment = if IsHorizontal then Enum.VerticalAlignment.Center else Enum.VerticalAlignment.Top
@@ -220,7 +221,7 @@ local function ApplyOpportunisticEnhancements(Object : Instance, Child : {}, Gui
             ExistingLayout.VerticalAlignment = if IsHorizontal then Enum.VerticalAlignment.Center else Enum.VerticalAlignment.Bottom
         end
 
-        local CounterAlignment = Child.CounterAxisAlignItems
+        local CounterAlignment = child.CounterAxisAlignItems
         if CounterAlignment == "MIN" then
             if IsHorizontal then
                 ExistingLayout.VerticalAlignment = Enum.VerticalAlignment.Top
@@ -241,30 +242,30 @@ local function ApplyOpportunisticEnhancements(Object : Instance, Child : {}, Gui
             end
         end
 
-        local ExistingPadding = Object:FindFirstChildOfClass("UIPadding")
+        local ExistingPadding = object:FindFirstChildOfClass("UIPadding")
 
         if not ExistingPadding then
             ExistingPadding = Instance.new("UIPadding")
-            ExistingPadding.Parent = Object
+            ExistingPadding.Parent = object
         end
 
-        ExistingPadding.PaddingTop = UDim.new(0, tonumber(Child.LayoutPaddingTop) or tonumber(Child.LayoutPadding) or 0)
-        ExistingPadding.PaddingBottom = UDim.new(0, tonumber(Child.LayoutPaddingBottom) or tonumber(Child.LayoutPadding) or 0)
-        ExistingPadding.PaddingLeft = UDim.new(0, tonumber(Child.LayoutPaddingLeft) or tonumber(Child.LayoutPadding) or 0)
-        ExistingPadding.PaddingRight = UDim.new(0, tonumber(Child.LayoutPaddingRight) or tonumber(Child.LayoutPadding) or 0)
+        ExistingPadding.PaddingTop = UDim.new(0, tonumber(child.LayoutPaddingTop) or tonumber(child.LayoutPadding) or 0)
+        ExistingPadding.PaddingBottom = UDim.new(0, tonumber(child.LayoutPaddingBottom) or tonumber(child.LayoutPadding) or 0)
+        ExistingPadding.PaddingLeft = UDim.new(0, tonumber(child.LayoutPaddingLeft) or tonumber(child.LayoutPadding) or 0)
+        ExistingPadding.PaddingRight = UDim.new(0, tonumber(child.LayoutPaddingRight) or tonumber(child.LayoutPadding) or 0)
     end
 end
 
-local function CreateRecursive(Parent, Data : {}, Mode : string)
+local function CreateRecursive(parent, data : {}, mode : string)
     local Gui = nil
 
-    if Parent:IsA("ScreenGui") then
-        Gui = Parent
+    if parent:IsA("ScreenGui") then
+        Gui = parent
     else
-        Gui = Parent:FindFirstAncestorWhichIsA("ScreenGui")
+        Gui = parent:FindFirstAncestorWhichIsA("ScreenGui")
     end
 
-    for _, Child in Data.Root do
+    for _, Child in ipairs(data.Root) do
         local Actions, Name = InterpretActions(Child.Name)
 
         if Actions.Continue then
@@ -273,7 +274,7 @@ local function CreateRecursive(Parent, Data : {}, Mode : string)
 
         local Object
 
-        for Action, _ in Actions do
+        for Action in pairs(Actions) do
             if Action:find("Class") then
                 local InstanceType = Action:gsub("Class", "")
                 Object = Instance.new(InstanceType)
@@ -284,7 +285,7 @@ local function CreateRecursive(Parent, Data : {}, Mode : string)
         if not Object then
             Object = Instance.new(Child.Type)
 
-            if Mode == "opportunistic" and Child.Type == "ImageLabel" then
+            if mode == "opportunistic" and Child.Type == "ImageLabel" then
                 if Child.RawType == "FRAME" and Gui:GetAttribute("FigmaSetting_ImportFramesAsFrames") ~= false then
                     Object:Destroy()
                     Object = Instance.new("Frame")
@@ -297,7 +298,7 @@ local function CreateRecursive(Parent, Data : {}, Mode : string)
 
         Object.ClipsDescendants = if Child.clipsContent ~= nil then Child.clipsContent else true
 
-        if Mode == "opportunistic" and Object:IsA("Frame") and Gui:GetAttribute("FigmaSetting_RespectAutoImportFrameOpacity") then
+        if mode == "opportunistic" and Object:IsA("Frame") and Gui:GetAttribute("FigmaSetting_RespectAutoImportFrameOpacity") then
             Object.BackgroundTransparency = 1 - Child.Opacity
             Object.BorderSizePixel = 0
             Object.BackgroundColor3 = Child.Color
@@ -311,24 +312,24 @@ local function CreateRecursive(Parent, Data : {}, Mode : string)
             CornerRadius.CornerRadius = UDim.new(0, Child.CornerRadius * GetGuiSizeDerivative(Gui))
         end
         
-        Object.Parent = Parent
+        Object.Parent = parent
         Object:SetAttribute("IsFigmaImportGroup", Child.IsGroup)
         Child.Name = Name
 
         Applicator:ApplyChangesFromData(Object, Child)
         ApplyImportedTextProperties(Object, Child, Gui)
-        if Mode == "opportunistic" then
+        if mode == "opportunistic" then
             ApplyOpportunisticEnhancements(Object, Child, Gui)
         end
 
         if not Actions.BreakAfter and Child.Children then
-            CreateRecursive(Object, Child.Children, Mode)
+            CreateRecursive(Object, Child.Children, mode)
         end
     end
 end
 
-function Creator:CreateFromData(SelectedInstance, Data : {}, Mode : string)
-    CreateRecursive(SelectedInstance, Data, string.lower(Mode or "classic"))
+function Creator:CreateFromData(selectedInstance, data : {}, mode : string)
+    CreateRecursive(selectedInstance, data, string.lower(mode or "classic"))
 end
 
 return Creator

@@ -1,25 +1,29 @@
 local ImageMapper = {}
 
+-- Services
 local SelectionService = game:GetService("Selection")
 
+-- Imports
 local Packages = script.Parent.Parent.Packages
 local Seam = require(Packages.Seam)
 local Jian = require(Packages.Jian)
 local Utility = require(script.Parent.Utility)
 
+-- Variables
 local Scope = Seam.Scope(Seam)
 local Widget = nil
 local List = nil
 local ImageInputs = {}
 
-local function GetCurrentScreenGui()
-    local Selection = SelectionService:Get()
 
-    if #Selection ~= 1 then
+local function GetCurrentScreenGui()
+    local CurrentSelection = SelectionService:Get()
+
+    if #CurrentSelection ~= 1 then
         return nil
     end
 
-    local Selected = Selection[1]
+    local Selected = CurrentSelection[1]
 
     if Selected:IsA("ScreenGui") then
         return Selected
@@ -28,21 +32,21 @@ local function GetCurrentScreenGui()
     return Selected:FindFirstAncestorWhichIsA("ScreenGui")
 end
 
-local function CollectHierarchyRecursive(Parent : Instance, Depth : number, PathPrefix : string, Output : {})
+local function CollectHierarchyRecursive(parent : Instance, depth : number, pathPrefix : string, output : {})
     local BranchEntries = {}
     local BranchHasImage = false
 
-    for _, Child in ipairs(Parent:GetChildren()) do
+    for _, Child in ipairs(parent:GetChildren()) do
         local IsImage = Child:IsA("ImageLabel") or Child:IsA("ImageButton")
         local Entry = {
             Object = Child,
-            Depth = Depth,
-            Path = PathPrefix .. "/" .. Child.Name,
+            Depth = depth,
+            Path = pathPrefix .. "/" .. Child.Name,
             IsImage = IsImage,
         }
 
         local ChildBranchEntries = {}
-        local ChildHasImage = CollectHierarchyRecursive(Child, Depth + 1, PathPrefix .. "/" .. Child.Name, ChildBranchEntries)
+        local ChildHasImage = CollectHierarchyRecursive(Child, depth + 1, pathPrefix .. "/" .. Child.Name, ChildBranchEntries)
 
         if IsImage or ChildHasImage then
             table.insert(BranchEntries, Entry)
@@ -57,7 +61,7 @@ local function CollectHierarchyRecursive(Parent : Instance, Depth : number, Path
 
     if BranchHasImage then
         for _, Entry in ipairs(BranchEntries) do
-            table.insert(Output, Entry)
+            table.insert(output, Entry)
         end
     end
 
@@ -78,12 +82,12 @@ local function ClearListRows()
     end
 end
 
-local function AddInfoRow(Text : string)
+local function AddInfoRow(text : string)
     Scope:New("TextLabel", {
         Name = "ImageMapItem_Info",
         Parent = List,
         BackgroundTransparency = 1,
-        Text = Text,
+        Text = text,
         TextColor3 = Color3.fromRGB(163, 163, 163),
         Font = Enum.Font.BuilderSans,
         TextSize = 14,
@@ -93,13 +97,13 @@ local function AddInfoRow(Text : string)
     })
 end
 
-local function BuildImageRow(Index : number, Entry : {})
-    local ExistingImage = if Entry.IsImage then Entry.Object.Image or "" else ""
+local function BuildImageRow(index : number, entry : {})
+    local ExistingImage = if entry.IsImage then entry.Object.Image or "" else ""
     local HasImage = ExistingImage ~= ""
-    local DisplayName = Entry.Object.Name .. " [" .. Entry.Object.ClassName .. "]"
+    local DisplayName = entry.Object.Name .. " [" .. entry.Object.ClassName .. "]"
 
     local Row = Scope:New("Frame", {
-        Name = "ImageMapItem_" .. tostring(Index),
+        Name = "ImageMapItem_" .. tostring(index),
         Parent = List,
         BackgroundTransparency = 1,
         Size = UDim2.new(1, 0, 0, 28),
@@ -116,9 +120,9 @@ local function BuildImageRow(Index : number, Entry : {})
     local NameLabel = Scope:New("TextLabel", {
         Parent = Row,
         BackgroundTransparency = 1,
-        Size = if Entry.IsImage then UDim2.fromScale(0.56, 1) else UDim2.fromScale(1, 1),
+        Size = if entry.IsImage then UDim2.fromScale(0.56, 1) else UDim2.fromScale(1, 1),
         Text = DisplayName,
-        TextColor3 = if Entry.IsImage and not HasImage then Color3.fromRGB(255, 170, 40) else Color3.fromRGB(255, 255, 255),
+        TextColor3 = if entry.IsImage and not HasImage then Color3.fromRGB(255, 170, 40) else Color3.fromRGB(255, 255, 255),
         Font = Enum.Font.BuilderSans,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -127,10 +131,10 @@ local function BuildImageRow(Index : number, Entry : {})
 
     Scope:New("UIPadding", {
         Parent = NameLabel,
-        PaddingLeft = UDim.new(0, Entry.Depth * 14),
+        PaddingLeft = UDim.new(0, entry.Depth * 14),
     })
 
-    if not Entry.IsImage then
+    if not entry.IsImage then
         return
     end
 
@@ -162,7 +166,7 @@ local function BuildImageRow(Index : number, Entry : {})
     })
 
     table.insert(ImageInputs, {
-        Object = Entry.Object,
+        Object = entry.Object,
         Input = Input,
     })
 end
