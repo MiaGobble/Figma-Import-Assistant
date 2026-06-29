@@ -2,13 +2,31 @@ local Creator = {}
 
 -- Constants
 local SIZE_DERITIVATIVE_REF = Vector2.new(1920, 1080)
-local FONT_LOOKUP_BY_NORMALIZED_NAME = {}
-
-for _, fontItem in ipairs(Enum.Font:GetEnumItems()) do
-    local enumName = string.lower(fontItem.Name)
-    FONT_LOOKUP_BY_NORMALIZED_NAME[enumName] = fontItem
-    FONT_LOOKUP_BY_NORMALIZED_NAME[(enumName:gsub("[^%w]", ""))] = fontItem
-end
+local FONT_FAMILY_MAP = {
+    fredokaone = "FredokaOne",
+    gotham = "Gotham",
+    arial = "Arial",
+    sourcesans = "SourceSansPro",
+    sourcesanspro = "SourceSansPro",
+    buildersans = "BuilderSans",
+    inter = "BuilderSans",
+    roboto = "Roboto",
+    robotomono = "RobotoMono",
+    nunito = "Nunito",
+    oswald = "Oswald",
+    ubuntu = "Ubuntu",
+    bangers = "Bangers",
+    cartoon = "Cartoon",
+    code = "Code",
+    fantasy = "Fantasy",
+    highway = "Highway",
+    legacy = "Legacy",
+    scifi = "SciFi",
+    kalam = "Kalam",
+    josefinsans = "JosefinSans",
+    indiflower = "IndieFlower",
+    titilliumweb = "TitilliumWeb",
+}
 
 -- Imports
 local Applicator = require(script.Parent.Applicator)
@@ -27,88 +45,24 @@ local function GetGuiSizeDerivative(gui : ScreenGui)
     return Magnitude
 end
 
-local function ResolveFontFromFigma(family, style)
-    local FamilyName = string.lower(tostring(family or ""))
-    local StyleName = string.lower(tostring(style or ""))
-    local NormalizedFamilyName = FamilyName:gsub("[^%w]", "")
+local function ResolveFontFromFigma(family)
+    local FamilyName = tostring(family or "")
+    local NormalizedFamilyName = string.lower(FamilyName):gsub("[^%w]", "")
+    local MappedFamily = FONT_FAMILY_MAP[NormalizedFamilyName] or FamilyName
 
-    local DirectMatch = FONT_LOOKUP_BY_NORMALIZED_NAME[FamilyName] or FONT_LOOKUP_BY_NORMALIZED_NAME[NormalizedFamilyName]
+    local Success, FontFace = pcall(Font.fromName, MappedFamily)
 
-    if DirectMatch then
-        return DirectMatch
+    if Success and FontFace then
+        return FontFace
     end
 
-    local IsBold = StyleName:find("bold")
-        or StyleName:find("semi")
-        or StyleName:find("medium")
-        or StyleName:find("black")
-        or StyleName:find("heavy")
-    local IsItalic = StyleName:find("italic") or StyleName:find("oblique")
-    local IsLight = StyleName:find("light")
+    local BuilderSansSuccess, BuilderSans = pcall(Font.fromName, "BuilderSans")
 
-    if FamilyName:find("gotham") then
-        if StyleName:find("black") or StyleName:find("heavy") then
-            return Enum.Font.GothamBlack
-        elseif IsBold then
-            return Enum.Font.GothamBold
-        end
-
-        return Enum.Font.Gotham
-    elseif FamilyName:find("source") then
-        if IsItalic then
-            return Enum.Font.SourceSansItalic
-        elseif IsLight then
-            return Enum.Font.SourceSansLight
-        elseif StyleName:find("semi") or StyleName:find("medium") then
-            return Enum.Font.SourceSansSemibold
-        elseif IsBold then
-            return Enum.Font.SourceSansBold
-        end
-
-        return Enum.Font.SourceSans
-    elseif FamilyName:find("arial") then
-        if IsBold then
-            return Enum.Font.ArialBold
-        end
-
-        return Enum.Font.Arial
-    elseif FamilyName:find("builder") or FamilyName:find("inter") then
-        return Enum.Font.BuilderSans
-    elseif FamilyName:find("roboto mono") then
-        return Enum.Font.RobotoMono
-    elseif FamilyName:find("roboto") then
-        return Enum.Font.Roboto
-    elseif FamilyName:find("nunito") then
-        return Enum.Font.Nunito
-    elseif FamilyName:find("oswald") then
-        return Enum.Font.Oswald
-    elseif FamilyName:find("ubuntu") then
-        return Enum.Font.Ubuntu
-    elseif FamilyName:find("bangers") then
-        return Enum.Font.Bangers
-    elseif FamilyName:find("cartoon") then
-        return Enum.Font.Cartoon
-    elseif FamilyName:find("code") then
-        return Enum.Font.Code
-    elseif FamilyName:find("fantasy") then
-        return Enum.Font.Fantasy
-    elseif FamilyName:find("highway") then
-        return Enum.Font.Highway
-    elseif FamilyName:find("legacy") then
-        return Enum.Font.Legacy
-    elseif FamilyName:find("sci") then
-        return Enum.Font.SciFi
-    elseif FamilyName:find("kalam") then
-        return Enum.Font.Kalam
-    elseif FamilyName:find("josefin") then
-        return Enum.Font.JosefinSans
-    elseif FamilyName:find("indie") then
-        return Enum.Font.IndieFlower
-    elseif FamilyName:find("titillium") then
-        return Enum.Font.TitilliumWeb
+    if BuilderSansSuccess and BuilderSans then
+        return BuilderSans
     end
 
-    return Enum.Font.BuilderSans
+    return nil
 end
 
 local function ApplyImportedTextProperties(object : Instance, child : {}, gui : ScreenGui)
@@ -125,7 +79,11 @@ local function ApplyImportedTextProperties(object : Instance, child : {}, gui : 
     object.Text = child.Text or object.Text
     object.TextSize = tonumber(child.TextSize) or object.TextSize
     object.TextColor3 = child.TextColor or object.TextColor3
-    object.Font = ResolveFontFromFigma(child.TextFontFamily, child.TextFontStyle)
+
+    local ResolvedFont = ResolveFontFromFigma(child.TextFontFamily)
+    if ResolvedFont then
+        object.FontFace = ResolvedFont
+    end
 end
 
 local function ApplyOpportunisticEnhancements(object : Instance, child : {}, gui : ScreenGui)
