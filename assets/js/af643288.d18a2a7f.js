@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[151],{4410:s=>{s.exports=JSON.parse('{"sourceUrl":"https://github.com/MiaGobble/Figma-Import-Assistant/blob/master","baseUrl":"/","classOrder":[],"apiCategories":[]}')}}]);
