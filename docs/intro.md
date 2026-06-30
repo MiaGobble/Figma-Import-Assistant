@@ -26,8 +26,8 @@ With auto-import, you can customize a blockout to automatically be generated in 
 # Installing the Roblox Plugin
 At minimum, you will need the Roblox plugin! Here are some options:
 
-* Get it from the [Creator Hub page](https://create.roblox.com/store/asset/17426771250/Figma-Importer-Assistant)
-* Download it from the [GitHub releases page](https://github.com/MiaGobble/Figma-Import-Assistant/releases)
+* Want to support me? Buy it on the [Creator Hub page](https://create.roblox.com/store/asset/17426771250/Figma-Importer-Assistant)
+* Otherwise, for free, download it from the [GitHub releases page](https://github.com/MiaGobble/Figma-Import-Assistant/releases)
 
 :::info
 Downloading it from the Creator Hub ensures that you recieve automatic updates. If you want finer control though, download it from releases.
