@@ -136,7 +136,7 @@ async function readNode(node, mode) {
         strokeWeight: safeNumber(node.strokeWeight, 0),
         opacity: safeNumber(node.opacity, 1),
         rotation: safeNumber(node.rotation, 0),
-        clipsContent: typeof node.clipsContent === "boolean" ? node.clipsContent : true,
+        clipsContent: typeof node.clipsContent === "boolean" ? node.clipsContent : false,
         fills: "fills" in node ? node.fills : [],
         strokes: "strokes" in node ? node.strokes : [],
         effects: "effects" in node ? node.effects : [],
@@ -173,7 +173,14 @@ async function exportSelection(mode) {
         }
     }
 
-    return nodes;
+    return {
+        meta: {
+            mode,
+            plugin: "roblox-figma-importer-assistant",
+            schemaVersion: 2,
+        },
+        nodes,
+    };
 }
 
 function tagSelection(tag, action) {
@@ -226,7 +233,7 @@ figma.ui.onmessage = async (message) => {
             figma.ui.postMessage({
                 type: "exportResult",
                 payload: payloadString,
-                nodeCount: payload.length,
+                nodeCount: payload.nodes.length,
             });
             return;
         }

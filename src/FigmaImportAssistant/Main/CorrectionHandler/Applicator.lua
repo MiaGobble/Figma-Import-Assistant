@@ -40,6 +40,29 @@ local function EnsureAspectRatioConstraint(selectedInstance : Instance, enabled 
     end
 end
 
+local function GetContextualParentSizeForChild(selectedInstance : Instance)
+    local Parent = selectedInstance.Parent
+    local ParentSize = Utility.GetParentProperties(Parent)
+
+    if not Parent or not Parent:IsA("GuiObject") then
+        return ParentSize
+    end
+
+    if not Parent:FindFirstChildOfClass("UIListLayout") then
+        return ParentSize
+    end
+
+    local PaddingLeft = tonumber(Parent:GetAttribute("FigmaAutoLayoutPaddingLeft")) or 0
+    local PaddingRight = tonumber(Parent:GetAttribute("FigmaAutoLayoutPaddingRight")) or 0
+    local PaddingTop = tonumber(Parent:GetAttribute("FigmaAutoLayoutPaddingTop")) or 0
+    local PaddingBottom = tonumber(Parent:GetAttribute("FigmaAutoLayoutPaddingBottom")) or 0
+
+    return Vector2.new(
+        math.max(1, ParentSize.X - PaddingLeft - PaddingRight),
+        math.max(1, ParentSize.Y - PaddingTop - PaddingBottom)
+    )
+end
+
 function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[string] : any})
     if not selectedInstance then
         return
@@ -116,17 +139,20 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
         FinalPosition -= selectedInstance.Parent:GetAttribute("FigmaPosition")
     end
 
-    local ScaledSize = Utility.ConvertToContextualScale(selectedInstance, FinalSize)
+    local ParentContextSize = GetContextualParentSizeForChild(selectedInstance)
+    local ScaledSize = UDim2.fromScale(FinalSize.X / ParentContextSize.X, FinalSize.Y / ParentContextSize.Y)
     local ScaledPosition = Utility.ConvertToContextualScale(selectedInstance, FinalPosition)
             
     ScaledPosition += UDim2.fromScale(ScaledSize.X.Scale * AnchorPoint.X, ScaledSize.Y.Scale * AnchorPoint.Y)
     
     Seam.New(selectedInstance, {
         ClipsDescendants = data.Settings and data.Settings.ClipDescendants ~= nil and data.Settings.ClipDescendants or selectedInstance.ClipsDescendants,
+        LayoutOrder = ToNumber(data.LayoutOrder, selectedInstance.LayoutOrder),
         Size = ScaledSize,
         Position = ScaledPosition,
         Name = data.Name or selectedInstance.Name,
         AnchorPoint = AnchorPoint,
+        Rotation = ToNumber(data.Rotation, selectedInstance.Rotation),
     })
 
     local AspectRatio = if CorrectedSize.Y ~= 0 then CorrectedSize.X / CorrectedSize.Y else 1

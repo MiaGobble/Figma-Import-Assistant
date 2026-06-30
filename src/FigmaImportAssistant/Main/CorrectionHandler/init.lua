@@ -21,7 +21,20 @@ function CorrectionHandler:Init()
         end
     end)
 
-    Interface.OnAutoImport(function(mode, importDataJSON, selected)
+    Interface.OnAutoImport(function(modeOrImportDataJSON, importDataJSONOrSelected, selectedMaybe)
+        local mode = nil
+        local importDataJSON = nil
+        local selected = nil
+
+        if selectedMaybe ~= nil then
+            mode = modeOrImportDataJSON
+            importDataJSON = importDataJSONOrSelected
+            selected = selectedMaybe
+        else
+            importDataJSON = modeOrImportDataJSON
+            selected = importDataJSONOrSelected
+        end
+
         if not selected or not selected:IsA("ScreenGui") then
             warn("Auto import requires a selected ScreenGui")
             return
@@ -38,7 +51,7 @@ function CorrectionHandler:Init()
 
         if InterpretedData and #InterpretedData.Root > 0 then
             Utility.CreateUndoMarkerStart()
-            Creator:CreateFromData(selected, InterpretedData, mode)
+            Creator:CreateFromData(selected, InterpretedData, InterpretedData.Mode or mode)
             Utility.CreateUndoMarkerEnd()
         end
     end)

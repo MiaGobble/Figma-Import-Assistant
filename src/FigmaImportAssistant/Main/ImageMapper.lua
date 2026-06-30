@@ -145,6 +145,7 @@ local function BuildImageRow(index : number, entry : {})
         BorderSizePixel = 0,
         Font = Enum.Font.BuilderSans,
         TextSize = 13,
+        TextScaled = true,
         ClearTextOnFocus = false,
         PlaceholderText = "rbxassetid://...",
         Text = ExistingImage:gsub("rbxassetid://", ""),
@@ -156,6 +157,12 @@ local function BuildImageRow(index : number, entry : {})
     Scope:New("UICorner", {
         Parent = Input,
         CornerRadius = UDim.new(0, 6),
+    })
+
+    Scope:New("UIPadding", {
+        Parent = Input,
+        PaddingTop = UDim.new(0.18, 0),
+        PaddingBottom = UDim.new(0.18, 0),
     })
 
     Scope:New("UIStroke", {
