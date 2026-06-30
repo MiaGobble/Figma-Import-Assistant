@@ -26,12 +26,13 @@ local SettingValues = {
     ClipDescendants = Scope:Value(true),
     ImportFramesAsFrames = Scope:Value(true),
     ImportTextAsText = Scope:Value(true),
+    ScaleText = Scope:Value(true),
     ImportStrokesAsUIStroke = Scope:Value(true),
     ApplyBackgroundColor = Scope:Value(true),
     ApplyAutoLayout = Scope:Value(true),
     RespectCornerRadius = Scope:Value(true),
     RespectFrameOpacity = Scope:Value(true),
-    DefaultOpportunisticMode = Scope:Value(true),
+    DefaultMiddleAnchor = Scope:Value(false),
 }
 
 local IsDefaultElementEnabled = Scope:Computed(function(Use)
@@ -81,6 +82,7 @@ local function BuildInterface()
         Visible = ShowNoSelectionWarning,
         Active = IsDefaultElementEnabled,
         Text = "Select a UI object (ScreenGui or GuiObject) to start using the plugin.",
+        TextColor3 = Color3.fromRGB(255, 170, 40),
         TextWrapped = true,
         TextXAlignment = Enum.TextXAlignment.Left,
         Size = UDim2.new(1, 0, 0, 36),
@@ -108,6 +110,11 @@ local function BuildInterface()
         }),
 
         Builders.BuildRow(Scope, Seam, Jian, {
+            Builders.BuildTextInput(Scope, InputRefs, Jian, "Rotation", "Rotation", IsAnyUIObjectElementEnabled),
+            Builders.BuildTextInput(Scope, InputRefs, Jian, "ShadowRadius", "Shadow Radius", IsAnyUIObjectElementEnabled),
+        }),
+
+        Builders.BuildRow(Scope, Seam, Jian, {
             Builders.BuildTextInput(Scope, InputRefs, Jian, "StrokeThickness", "Stroke Thickness", IsAnyUIObjectElementEnabled),
             Builders.BuildTextInput(Scope, InputRefs, Jian, "ShadowX", "Shadow X Offset", IsAnyUIObjectElementEnabled),
         }),
@@ -117,9 +124,6 @@ local function BuildInterface()
             Builders.BuildTextInput(Scope, InputRefs, Jian, "ShadowSpread", "Shadow Spread", IsAnyUIObjectElementEnabled),
         }),
 
-        Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildTextInput(Scope, InputRefs, Jian, "ShadowRadius", "Shadow Radius", IsAnyUIObjectElementEnabled),
-        }),
     }, ScrollingList, true)
 
     Builders.BuildSection(Scope, Seam, Jian, "Settings", {
@@ -252,45 +256,44 @@ local function BuildInterface()
             Visible = ShowAutoImportWarning,
             Active = IsAutoImportElementEnabled,
             Text = "Auto import requires selecting a ScreenGui.",
+            TextColor3 = Color3.fromRGB(255, 170, 40),
             TextWrapped = true,
             TextXAlignment = Enum.TextXAlignment.Left,
             Size = UDim2.new(1, 0, 0, 24),
         }),
 
         Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildCheckbox(Scope, Jian, "Aspect Ratio Constraints", IsAutoImportElementEnabled, SettingValues.KeepAspectRatio),
-            Builders.BuildCheckbox(Scope, Jian, "Default Opportunistic", IsAutoImportElementEnabled, SettingValues.DefaultOpportunisticMode),
+            Builders.BuildCheckbox(Scope, Jian, "Infer Aspect Ratio", IsAutoImportElementEnabled, SettingValues.KeepAspectRatio),
+            Builders.BuildCheckbox(Scope, Jian, "Default Middle Anchor", IsAutoImportElementEnabled, SettingValues.DefaultMiddleAnchor),
         }, 22),
 
         Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildCheckbox(Scope, Jian, "Import Frames", IsAutoImportElementEnabled, SettingValues.ImportFramesAsFrames),
-            Builders.BuildCheckbox(Scope, Jian, "Import Text", IsAutoImportElementEnabled, SettingValues.ImportTextAsText),
+            Builders.BuildCheckbox(Scope, Jian, "Infer Frames", IsAutoImportElementEnabled, SettingValues.ImportFramesAsFrames),
+            Builders.BuildCheckbox(Scope, Jian, "Infer Text", IsAutoImportElementEnabled, SettingValues.ImportTextAsText),
         }, 22),
 
         Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildCheckbox(Scope, Jian, "Import Strokes", IsAutoImportElementEnabled, SettingValues.ImportStrokesAsUIStroke),
-            Builders.BuildCheckbox(Scope, Jian, "Background Color", IsAutoImportElementEnabled, SettingValues.ApplyBackgroundColor),
+            Builders.BuildCheckbox(Scope, Jian, "Scale Text", IsAutoImportElementEnabled, SettingValues.ScaleText),
+            Builders.BuildCheckbox(Scope, Jian, "Infer Opacity", IsAutoImportElementEnabled, SettingValues.RespectFrameOpacity),
         }, 22),
 
         Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildCheckbox(Scope, Jian, "Auto Layout", IsAutoImportElementEnabled, SettingValues.ApplyAutoLayout),
-            Builders.BuildCheckbox(Scope, Jian, "Corner Radius", IsAutoImportElementEnabled, SettingValues.RespectCornerRadius),
+            Builders.BuildCheckbox(Scope, Jian, "Infer Strokes", IsAutoImportElementEnabled, SettingValues.ImportStrokesAsUIStroke),
+            Builders.BuildCheckbox(Scope, Jian, "Infer Color", IsAutoImportElementEnabled, SettingValues.ApplyBackgroundColor),
         }, 22),
 
         Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildCheckbox(Scope, Jian, "Frame Opacity", IsAutoImportElementEnabled, SettingValues.RespectFrameOpacity, UDim2.fromScale(0.95, 1)),
+            Builders.BuildCheckbox(Scope, Jian, "Infer Layout", IsAutoImportElementEnabled, SettingValues.ApplyAutoLayout),
+            Builders.BuildCheckbox(Scope, Jian, "Infer Corners", IsAutoImportElementEnabled, SettingValues.RespectCornerRadius),
         }, 22),
 
         InputRefs.ImportJSON,
         
         Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildButton(Scope, Seam, Jian, "Auto Import (Opportunistic)", IsAutoImportElementEnabled, UDim2.fromScale(0.475, 1), function()
+            Builders.BuildButton(Scope, Seam, Jian, "Auto Import", IsAutoImportElementEnabled, UDim2.fromScale(0.95, 1), function()
                 Data.ApplyImportSettingsToRoot(Seam, CurrentSelectedInstance.Value, SettingValues)
-                RunCallbacks(AutoImportCallbacks, "opportunistic", Builders.ReadText(InputRefs, "ImportJSON"), CurrentSelectedInstance.Value)
-            end),
-            Builders.BuildButton(Scope, Seam, Jian, "Auto Import (Classic)", IsAutoImportElementEnabled, UDim2.fromScale(0.475, 1), function()
-                Data.ApplyImportSettingsToRoot(Seam, CurrentSelectedInstance.Value, SettingValues)
-                RunCallbacks(AutoImportCallbacks, "classic", Builders.ReadText(InputRefs, "ImportJSON"), CurrentSelectedInstance.Value)
+                RunCallbacks(AutoImportCallbacks, Builders.ReadText(InputRefs, "ImportJSON"), CurrentSelectedInstance.Value)
+                InputRefs.ImportJSON.Text = ""
             end),
         }),
     }, ScrollingList, true)

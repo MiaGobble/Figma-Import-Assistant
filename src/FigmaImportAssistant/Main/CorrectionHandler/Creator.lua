@@ -45,6 +45,44 @@ local function GetGuiSizeDerivative(gui : ScreenGui)
     return Magnitude
 end
 
+local function Clamp(value : number, minimum : number, maximum : number)
+    return math.max(minimum, math.min(maximum, value))
+end
+
+local function ToScaleFromPixels(pixels : number, axisSize : number)
+    local SafeAxis = tonumber(axisSize) or 0
+
+    if SafeAxis <= 0 then
+        return 0
+    end
+
+    return Clamp((tonumber(pixels) or 0) / SafeAxis, 0, 1)
+end
+
+local function ToScaledStrokeThickness(strokePixels : number, sizeX : number, sizeY : number, gui : ScreenGui)
+    local ViewportSize = gui:GetAttribute("FigmaSize") or SIZE_DERITIVATIVE_REF
+    local ViewportMinAxis = math.min(ViewportSize.X, ViewportSize.Y)
+    local ElementMinAxis = math.min(tonumber(sizeX) or 0, tonumber(sizeY) or 0)
+    local StrokePixels = tonumber(strokePixels) or 0
+
+    if ViewportMinAxis <= 0 then
+        return 0.006
+    end
+
+    if ElementMinAxis <= 0 then
+        local FallbackScale = StrokePixels / ViewportMinAxis
+        return Clamp(FallbackScale * 2.6, 0.0011, 0.035)
+    end
+
+    -- Blend element-relative and viewport-relative stroke scales so thin/small and large
+    -- elements both stay visually closer to expected thickness.
+    local RelativeToElement = StrokePixels / ElementMinAxis
+    local RelativeToViewport = StrokePixels / ViewportMinAxis
+    local HybridScale = (RelativeToElement * 0.75) + (RelativeToViewport * 0.25)
+
+    return Clamp(HybridScale * 2.4, 0.0011, 0.035)
+end
+
 local function ResolveFontFromFigma(family)
     local FamilyName = tostring(family or "")
     local NormalizedFamilyName = string.lower(FamilyName):gsub("[^%w]", "")
@@ -67,6 +105,7 @@ end
 
 local function ApplyImportedTextProperties(object : Instance, child : {}, gui : ScreenGui)
     local RespectText = gui:GetAttribute("FigmaSetting_ImportTextAsText") ~= false
+    local ScaleText = gui:GetAttribute("FigmaSetting_ScaleText") ~= false
 
     if not RespectText then
         return
@@ -77,13 +116,52 @@ local function ApplyImportedTextProperties(object : Instance, child : {}, gui : 
     end
 
     object.Text = child.Text or object.Text
-    object.TextSize = tonumber(child.TextSize) or object.TextSize
+    local BaseTextSize = tonumber(child.TextSize) or object.TextSize
+    object.TextSize = BaseTextSize
     object.TextColor3 = child.TextColor or object.TextColor3
 
     local ResolvedFont = ResolveFontFromFigma(child.TextFontFamily)
     if ResolvedFont then
         object.FontFace = ResolvedFont
     end
+
+    local ExistingPadding = object:FindFirstChild("FigmaTextPadding")
+
+    if ScaleText then
+        object.TextScaled = true
+
+        if not ExistingPadding then
+            ExistingPadding = Instance.new("UIPadding")
+            ExistingPadding.Name = "FigmaTextPadding"
+            ExistingPadding.Parent = object
+        end
+
+        local ElementHeight = tonumber(child.Size and child.Size.Y) or 0
+        local TargetTextHeight = tonumber(child.TextSize) or 0
+
+        -- Keep text visually close to the exported size without over-shrinking TextScaled labels.
+        local VerticalPaddingScale = 0
+        if ElementHeight > 0 and TargetTextHeight > 0 then
+            local UnusedSpaceRatio = Clamp(1 - (TargetTextHeight / ElementHeight), 0, 1)
+            VerticalPaddingScale = Clamp(UnusedSpaceRatio * 0.1, 0, 0.04)
+        end
+
+        local Padding = UDim.new(VerticalPaddingScale, 0)
+        ExistingPadding.PaddingTop = Padding
+        ExistingPadding.PaddingBottom = Padding
+        ExistingPadding.PaddingLeft = UDim.new(0, 0)
+        ExistingPadding.PaddingRight = UDim.new(0, 0)
+    else
+        object.TextScaled = false
+
+        if ExistingPadding and ExistingPadding:IsA("UIPadding") then
+            ExistingPadding:Destroy()
+        end
+    end
+end
+
+local function IsOpportunisticMode(mode : string)
+    return string.lower(mode or "classic") == "opportunistic"
 end
 
 local function ApplyOpportunisticEnhancements(object : Instance, child : {}, gui : ScreenGui)
@@ -116,14 +194,20 @@ local function ApplyOpportunisticEnhancements(object : Instance, child : {}, gui
             end
 
             ExistingStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-            ExistingStroke.Thickness = tonumber(child.Stroke) or 1
+            ExistingStroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+            ExistingStroke.Thickness = ToScaledStrokeThickness(
+                tonumber(child.Stroke) or 1,
+                tonumber(child.Size and child.Size.X) or 0,
+                tonumber(child.Size and child.Size.Y) or 0,
+                gui
+            )
             ExistingStroke.Color = child.StrokeColor or child.Color or Color3.fromRGB(255, 255, 255)
         elseif ExistingStroke then
             ExistingStroke:Destroy()
         end
     end
 
-    if child.HasAutoLayout and RespectAutoLayout and (object:IsA("Frame") or object:IsA("ScrollingFrame")) then
+    if child.HasAutoLayout and RespectAutoLayout and object:IsA("GuiObject") then
         local ExistingLayout = object:FindFirstChildOfClass("UIListLayout")
 
         if not ExistingLayout then
@@ -132,40 +216,17 @@ local function ApplyOpportunisticEnhancements(object : Instance, child : {}, gui
         end
 
         local IsHorizontal = child.LayoutMode == "HORIZONTAL"
+        ExistingLayout.SortOrder = Enum.SortOrder.LayoutOrder
         ExistingLayout.FillDirection = if IsHorizontal then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
         ExistingLayout.Wraps = child.LayoutWrap == "WRAP"
-        ExistingLayout.Padding = UDim.new(0, tonumber(child.LayoutSpacing) or 0)
+        local ContainerWidth = tonumber(child.Size and child.Size.X) or 0
+        local ContainerHeight = tonumber(child.Size and child.Size.Y) or 0
+        local LayoutAxisSize = if IsHorizontal then ContainerWidth else ContainerHeight
+        ExistingLayout.Padding = UDim.new(ToScaleFromPixels(tonumber(child.LayoutSpacing) or 0, LayoutAxisSize), 0)
 
-        -- Flex behavior derived from Figma sizing modes.
+        -- Disable flex sizing to avoid unexpected shrinking/growing of auto layout children.
         ExistingLayout.HorizontalFlex = Enum.UIFlexAlignment.None
         ExistingLayout.VerticalFlex = Enum.UIFlexAlignment.None
-
-        local PrimarySizing = child.PrimaryAxisSizingMode
-        local CounterSizing = child.CounterAxisSizingMode
-
-        if PrimarySizing == "AUTO" then
-            if IsHorizontal then
-                ExistingLayout.HorizontalFlex = Enum.UIFlexAlignment.Fill
-            else
-                ExistingLayout.VerticalFlex = Enum.UIFlexAlignment.Fill
-            end
-        end
-
-        if CounterSizing == "AUTO" then
-            if IsHorizontal then
-                ExistingLayout.VerticalFlex = Enum.UIFlexAlignment.Fill
-            else
-                ExistingLayout.HorizontalFlex = Enum.UIFlexAlignment.Fill
-            end
-        end
-
-        if child.PrimaryAxisAlignItems == "SPACE_BETWEEN" then
-            if IsHorizontal then
-                ExistingLayout.HorizontalFlex = Enum.UIFlexAlignment.SpaceBetween
-            else
-                ExistingLayout.VerticalFlex = Enum.UIFlexAlignment.SpaceBetween
-            end
-        end
 
         local PrimaryAlignment = child.PrimaryAxisAlignItems
         if PrimaryAlignment == "MIN" then
@@ -207,10 +268,20 @@ local function ApplyOpportunisticEnhancements(object : Instance, child : {}, gui
             ExistingPadding.Parent = object
         end
 
-        ExistingPadding.PaddingTop = UDim.new(0, tonumber(child.LayoutPaddingTop) or tonumber(child.LayoutPadding) or 0)
-        ExistingPadding.PaddingBottom = UDim.new(0, tonumber(child.LayoutPaddingBottom) or tonumber(child.LayoutPadding) or 0)
-        ExistingPadding.PaddingLeft = UDim.new(0, tonumber(child.LayoutPaddingLeft) or tonumber(child.LayoutPadding) or 0)
-        ExistingPadding.PaddingRight = UDim.new(0, tonumber(child.LayoutPaddingRight) or tonumber(child.LayoutPadding) or 0)
+        local PaddingTop = tonumber(child.LayoutPaddingTop) or tonumber(child.LayoutPadding) or 0
+        local PaddingBottom = tonumber(child.LayoutPaddingBottom) or tonumber(child.LayoutPadding) or 0
+        local PaddingLeft = tonumber(child.LayoutPaddingLeft) or tonumber(child.LayoutPadding) or 0
+        local PaddingRight = tonumber(child.LayoutPaddingRight) or tonumber(child.LayoutPadding) or 0
+
+        ExistingPadding.PaddingTop = UDim.new(ToScaleFromPixels(PaddingTop, ContainerHeight), 0)
+        ExistingPadding.PaddingBottom = UDim.new(ToScaleFromPixels(PaddingBottom, ContainerHeight), 0)
+        ExistingPadding.PaddingLeft = UDim.new(ToScaleFromPixels(PaddingLeft, ContainerWidth), 0)
+        ExistingPadding.PaddingRight = UDim.new(ToScaleFromPixels(PaddingRight, ContainerWidth), 0)
+
+        object:SetAttribute("FigmaAutoLayoutPaddingTop", PaddingTop)
+        object:SetAttribute("FigmaAutoLayoutPaddingBottom", PaddingBottom)
+        object:SetAttribute("FigmaAutoLayoutPaddingLeft", PaddingLeft)
+        object:SetAttribute("FigmaAutoLayoutPaddingRight", PaddingRight)
     end
 end
 
@@ -224,6 +295,17 @@ local function CreateRecursive(parent, data : {}, mode : string)
     end
 
     for _, Child in ipairs(data.Root) do
+        Child.Settings = Child.Settings or {}
+        Child.Settings.IsAspectRatioConstrained = Gui:GetAttribute("FigmaSetting_IsAspectRatioConstrained") ~= false
+        Child.Settings.ClipDescendants = Child.clipsContent ~= nil and Child.clipsContent or false
+
+        if Gui:GetAttribute("FigmaSetting_DefaultMiddleAnchor") == true then
+            Child.AnchorPoint = {
+                X = 0.5,
+                Y = 0.5,
+            }
+        end
+
         local Actions, Name = InterpretActions(Child.Name)
 
         if Actions.Continue then
@@ -243,8 +325,13 @@ local function CreateRecursive(parent, data : {}, mode : string)
         if not Object then
             Object = Instance.new(Child.Type)
 
-            if mode == "opportunistic" and Child.Type == "ImageLabel" then
-                if Child.RawType == "FRAME" and Gui:GetAttribute("FigmaSetting_ImportFramesAsFrames") ~= false then
+            if Child.RawType == "GROUP" then
+                Object:Destroy()
+                Object = Instance.new("Frame")
+            end
+
+            if IsOpportunisticMode(mode) and Child.Type == "ImageLabel" then
+                if (Child.RawType == "FRAME" or Child.RawType == "GROUP") and Gui:GetAttribute("FigmaSetting_ImportFramesAsFrames") ~= false then
                     Object:Destroy()
                     Object = Instance.new("Frame")
                 elseif Child.IsText and Gui:GetAttribute("FigmaSetting_ImportTextAsText") ~= false then
@@ -254,9 +341,9 @@ local function CreateRecursive(parent, data : {}, mode : string)
             end
         end
 
-        Object.ClipsDescendants = if Child.clipsContent ~= nil then Child.clipsContent else true
+        Object.ClipsDescendants = if Child.clipsContent ~= nil then Child.clipsContent else false
 
-        if mode == "opportunistic" and Object:IsA("Frame") and Gui:GetAttribute("FigmaSetting_RespectAutoImportFrameOpacity") then
+        if IsOpportunisticMode(mode) and Object:IsA("Frame") and Gui:GetAttribute("FigmaSetting_RespectAutoImportFrameOpacity") then
             Object.BackgroundTransparency = 1 - Child.Opacity
             Object.BorderSizePixel = 0
             Object.BackgroundColor3 = Child.Color
@@ -267,7 +354,10 @@ local function CreateRecursive(parent, data : {}, mode : string)
         if Child.CornerRadius > 0 and Gui:GetAttribute("FigmaSetting_RespectAutoImportCornerRadius") then
             local CornerRadius = Instance.new("UICorner")
             CornerRadius.Parent = Object
-            CornerRadius.CornerRadius = UDim.new(0, Child.CornerRadius * GetGuiSizeDerivative(Gui))
+
+            local MinAxis = math.min(tonumber(Child.Size and Child.Size.X) or 0, tonumber(Child.Size and Child.Size.Y) or 0)
+            local RadiusScale = ToScaleFromPixels(Child.CornerRadius * GetGuiSizeDerivative(Gui), MinAxis)
+            CornerRadius.CornerRadius = UDim.new(RadiusScale, 0)
         end
         
         Object.Parent = parent
@@ -276,7 +366,7 @@ local function CreateRecursive(parent, data : {}, mode : string)
 
         Applicator:ApplyChangesFromData(Object, Child)
         ApplyImportedTextProperties(Object, Child, Gui)
-        if mode == "opportunistic" then
+        if IsOpportunisticMode(mode) then
             ApplyOpportunisticEnhancements(Object, Child, Gui)
         end
 
@@ -287,7 +377,8 @@ local function CreateRecursive(parent, data : {}, mode : string)
 end
 
 function Creator:CreateFromData(selectedInstance, data : {}, mode : string)
-    CreateRecursive(selectedInstance, data, string.lower(mode or "classic"))
+    local ResolvedMode = string.lower(mode or data.Mode or "classic")
+    CreateRecursive(selectedInstance, data, ResolvedMode)
 end
 
 return Creator

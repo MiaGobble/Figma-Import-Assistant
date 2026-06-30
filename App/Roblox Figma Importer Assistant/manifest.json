@@ -1,10 +1,12 @@
 {
   "name": "Roblox Figma Importer Assistant",
-  "id": "1147666983388927669",
+  "id": "1474417780898732294",
   "api": "1.0.0",
   "main": "code.js",
   "editorType": [
     "figma"
   ],
-  "ui": "ui.html"
+  "ui": "ui.html",
+  "networkAccess": { "allowedDomains": ["none"] },
+  "documentAccess": "dynamic-page"
 }

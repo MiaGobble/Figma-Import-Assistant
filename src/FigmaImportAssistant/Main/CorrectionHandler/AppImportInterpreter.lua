@@ -28,6 +28,36 @@ local function ResolveMode(mode)
     return "classic"
 end
 
+local function InferModeFromPayload(payload)
+    if type(payload) ~= "table" then
+        return nil
+    end
+
+    local Meta = payload.meta or payload.Meta
+
+    if type(Meta) == "table" then
+        local MetaMode = Meta.mode or Meta.Mode
+
+        if type(MetaMode) == "string" then
+            return MetaMode
+        end
+    end
+
+    local Nodes = payload.nodes or payload.Nodes or payload.Root
+
+    if type(Nodes) == "table" then
+        local FirstNode = Nodes[1]
+
+        if type(FirstNode) == "table" and type(FirstNode.mode) == "string" then
+            return FirstNode.mode
+        end
+    elseif type(payload[1]) == "table" and type(payload[1].mode) == "string" then
+        return payload[1].mode
+    end
+
+    return nil
+end
+
 local function GetOpacityAndColor(child)
     local Opacity = child.opacity or 1
     local Color = Color3.fromRGB(255, 255, 255)
@@ -114,7 +144,7 @@ local function ReadRecursive(parentTable, mode)
         Root = {},
     }
 
-    for _, Child in ipairs(parentTable) do
+    for Index, Child in ipairs(parentTable) do
         local Opacity, Color = GetOpacityAndColor(Child)
         local StrokeColor = GetStrokeColor(Child)
 
@@ -145,21 +175,19 @@ local function ReadRecursive(parentTable, mode)
         local CounterAxisAlignItems = AutoLayoutData.counterAxisAlignItems
 
         local IsText = Child.type == "TEXT"
+        local IsGroup = Child.type == "GROUP"
         local HasAutoLayout = LayoutMode ~= nil and LayoutMode ~= "NONE"
         local HasStroke = Child.strokeWeight ~= nil and Child.strokeWeight > 0
 
         local DefaultType = "ImageLabel"
 
-        if mode == "opportunistic" then
-            if Child.type == "GROUP" or Child.type == "FRAME" then
-                DefaultType = "Frame"
-            elseif IsText then
-                DefaultType = "TextLabel"
-            end
-        else
-            if Child.type == "GROUP" then
-                DefaultType = "Frame"
-            end
+        if mode ~= "opportunistic" and IsGroup then
+            DefaultType = "Frame"
+        end
+
+        if IsGroup then
+            Opacity = 0
+            HasStroke = false
         end
 
         local Interpretation = {
@@ -172,6 +200,10 @@ local function ReadRecursive(parentTable, mode)
                 X = Child.x,
                 Y = Child.y,
             },
+
+            Rotation = -(Child.rotation or 0),
+
+            LayoutOrder = Index,
     
             AnchorPoint = {
                 X = 0,
@@ -182,7 +214,7 @@ local function ReadRecursive(parentTable, mode)
             Image = "",
             Stroke = Child.strokeWeight or 0,
             Oblique = 0,
-            IsGroup = Child.type == "GROUP",
+            IsGroup = IsGroup,
             IsText = IsText,
             HasAutoLayout = HasAutoLayout,
             HasStroke = HasStroke,
@@ -232,7 +264,17 @@ end
 
 function AppImportInterpreter:InterpretJSONData(jsonData : string, mode : string)
     local Data = HttpService:JSONDecode(jsonData)
-    local Interpretation = ReadRecursive(Data, ResolveMode(mode))
+    local PayloadMode = InferModeFromPayload(Data)
+    local ResolvedMode = ResolveMode(PayloadMode or mode)
+
+    local Nodes = Data
+
+    if type(Data) == "table" then
+        Nodes = Data.nodes or Data.Nodes or Data.Root or Data
+    end
+
+    local Interpretation = ReadRecursive(Nodes, ResolvedMode)
+    Interpretation.Mode = ResolvedMode
 
     return Interpretation
 end

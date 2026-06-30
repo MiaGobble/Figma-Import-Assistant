@@ -74,6 +74,10 @@ function Data.ApplySelectionToInputs(selected, inputRefs, settingValues)
         inputRefs.AnchorPointY.Text = if selected and selected:IsA("GuiObject") then tostring(selected.AnchorPoint.Y) else "0"
     end
 
+    if inputRefs.Rotation then
+        inputRefs.Rotation.Text = if selected and selected:IsA("GuiObject") then tostring(selected.Rotation) else "0"
+    end
+
     if inputRefs.StrokeThickness then
         inputRefs.StrokeThickness.Text = tostring(if selected then selected:GetAttribute("FigmaStrokeThickness") or 0 else 0)
     end
@@ -114,11 +118,13 @@ function Data.ApplySelectionToInputs(selected, inputRefs, settingValues)
         local Mapping = {
             ImportFramesAsFrames = {"FigmaSetting_ImportFramesAsFrames", true},
             ImportTextAsText = {"FigmaSetting_ImportTextAsText", true},
+            ScaleText = {"FigmaSetting_ScaleText", true},
             ImportStrokesAsUIStroke = {"FigmaSetting_ImportStrokesAsUIStroke", true},
             ApplyBackgroundColor = {"FigmaSetting_ApplyBackgroundColor", true},
             ApplyAutoLayout = {"FigmaSetting_ApplyAutoLayout", true},
             RespectCornerRadius = {"FigmaSetting_RespectAutoImportCornerRadius", true},
             RespectFrameOpacity = {"FigmaSetting_RespectAutoImportFrameOpacity", true},
+            DefaultMiddleAnchor = {"FigmaSetting_DefaultMiddleAnchor", false},
         }
 
         for SettingName, MappingData in pairs(Mapping) do
@@ -153,6 +159,7 @@ function Data.CollectApplyData(selected, readText, settingValues)
             X = ToNumber(readText("AnchorPointX"), if selected and selected:IsA("GuiObject") then selected.AnchorPoint.X else 0),
             Y = ToNumber(readText("AnchorPointY"), if selected and selected:IsA("GuiObject") then selected.AnchorPoint.Y else 0),
         },
+        Rotation = ToNumber(readText("Rotation"), if selected and selected:IsA("GuiObject") then selected.Rotation else 0),
         Name = if readText("Name") ~= "" then readText("Name") else if selected then selected.Name else "",
         Image = readText("ImageId"),
         Stroke = ToNumber(readText("StrokeThickness"), if selected then selected:GetAttribute("FigmaStrokeThickness") or 0 else 0),
@@ -162,11 +169,13 @@ function Data.CollectApplyData(selected, readText, settingValues)
             ClipDescendants = settingValues.ClipDescendants.Value,
             ImportFramesAsFrames = settingValues.ImportFramesAsFrames.Value,
             ImportTextAsText = settingValues.ImportTextAsText.Value,
+            ScaleText = settingValues.ScaleText.Value,
             ImportStrokesAsUIStroke = settingValues.ImportStrokesAsUIStroke.Value,
             ApplyBackgroundColor = settingValues.ApplyBackgroundColor.Value,
             ApplyAutoLayout = settingValues.ApplyAutoLayout.Value,
             RespectAutoImportCornerRadius = settingValues.RespectCornerRadius.Value,
             RespectAutoImportFrameOpacity = settingValues.RespectFrameOpacity.Value,
+            DefaultMiddleAnchor = settingValues.DefaultMiddleAnchor.Value,
         },
         Shadow = {
             Offset = Vector2.new(
@@ -188,11 +197,13 @@ function Data.ApplyImportSettingsToRoot(seam, rootGui, settingValues)
         [seam.Attribute("FigmaSetting_IsAspectRatioConstrained")] = settingValues.KeepAspectRatio.Value,
         [seam.Attribute("FigmaSetting_ImportFramesAsFrames")] = settingValues.ImportFramesAsFrames.Value,
         [seam.Attribute("FigmaSetting_ImportTextAsText")] = settingValues.ImportTextAsText.Value,
+        [seam.Attribute("FigmaSetting_ScaleText")] = settingValues.ScaleText.Value,
         [seam.Attribute("FigmaSetting_ImportStrokesAsUIStroke")] = settingValues.ImportStrokesAsUIStroke.Value,
         [seam.Attribute("FigmaSetting_ApplyBackgroundColor")] = settingValues.ApplyBackgroundColor.Value,
         [seam.Attribute("FigmaSetting_ApplyAutoLayout")] = settingValues.ApplyAutoLayout.Value,
         [seam.Attribute("FigmaSetting_RespectAutoImportCornerRadius")] = settingValues.RespectCornerRadius.Value,
         [seam.Attribute("FigmaSetting_RespectAutoImportFrameOpacity")] = settingValues.RespectFrameOpacity.Value,
+        [seam.Attribute("FigmaSetting_DefaultMiddleAnchor")] = settingValues.DefaultMiddleAnchor.Value,
     })
 end
 
