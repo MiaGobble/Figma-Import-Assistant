@@ -30,6 +30,7 @@ There are also additional fields for Roblox-related properties, such as:
 * Anchor Point X
 * Anchor Point Y
 * Name
+* Rotation
 
 To apply these, click *Apply* at the bottom of the plugin.
 

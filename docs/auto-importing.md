@@ -24,7 +24,7 @@ To import, first apply tags (see the tags section below) using the Figma plugin.
 
 Select your mode (opportunistic is recommended), and then click *export selection*. To copy your data, click *copy JSON*.
 
-Now in Roblox Studio, select a `ScreenGui` instance, paste the JSON snippet you copied into the auto import section of the plugin, and click the auto import mode of your choice.
+Now in Roblox Studio, select a `ScreenGui` instance, paste the JSON snippet you copied into the auto import section of the plugin, and click *auto import*.
 
 **You will need to upload the images and apply them yourself!** You can apply images either through:
 * Property input (not recommended)
