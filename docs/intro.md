@@ -24,23 +24,20 @@ With other tools, you still have to put in the extra work to make it work with d
 With auto-import, you can customize a blockout to automatically be generated in just moments. All that’s needed is for you to export the images!
 
 # Installing the Roblox Plugin
-At minimum, you will need the Roblox plugin! Here are some options:
-
-* Want to support me? Buy it on the [Creator Hub page](https://create.roblox.com/store/asset/17426771250/Figma-Importer-Assistant)
-* Otherwise, for free, download it from the [GitHub releases page](https://github.com/MiaGobble/Figma-Import-Assistant/releases)
+***For the easiest option, get it from the creator store: [Creator Hub page](https://create.roblox.com/store/asset/17426771250/Figma-Importer-Assistant).***
 
 :::info
 Downloading it from the Creator Hub ensures that you recieve automatic updates. If you want finer control though, download it from releases.
 :::
 
-If you get it from the Github releases page, you can install it by inserting the .rbxm file into Studio, right-clicking it, and clicking “save as local plugin”.
+Alternatively, download it from the [GitHub releases page](https://github.com/MiaGobble/Figma-Import-Assistant/releases). If you get it from the Github releases page, you can install it by inserting the .rbxm file into Studio, right-clicking it, and clicking “save as local plugin”.
 
 # Installing the Figma Plugin
 You will need the Figma plugin in order to do automatic importing.
 
-You can get the plugin [on Figma from the plugin page](https://www.figma.com/community/plugin/1474417780898732294/roblox-figma-importer-assistant).
+***You can get the plugin [on Figma from the plugin page](https://www.figma.com/community/plugin/1474417780898732294/roblox-figma-importer-assistant).***
 
-Alternatively can get it from the GitHub releases page. Once downloaded:
+*For OLD VERSIONS ONLY*, you can get it from the GitHub releases page. Once downloaded:
 * Unzip `app` folder
 * In Figma, go to Plugins -> Development -> Import plugin from manifest
 * Go to the unzipped App folder and import the file named “manifest”
