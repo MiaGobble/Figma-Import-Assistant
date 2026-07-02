@@ -139,12 +139,86 @@ local function CompileShadowData(child)
     }
 end
 
+local function ReadRelativeTransform(child)
+    local RelativeTransform = child.relativeTransform or child.RelativeTransform
+
+    if type(RelativeTransform) ~= "table" then
+        return nil
+    end
+
+    local Row1 = RelativeTransform[1]
+    local Row2 = RelativeTransform[2]
+
+    if type(Row1) ~= "table" or type(Row2) ~= "table" then
+        return nil
+    end
+
+    local A = tonumber(Row1[1])
+    local C = tonumber(Row1[2])
+    local X = tonumber(Row1[3])
+    local B = tonumber(Row2[1])
+    local D = tonumber(Row2[2])
+    local Y = tonumber(Row2[3])
+
+    if A == nil or B == nil or C == nil or D == nil or X == nil or Y == nil then
+        return nil
+    end
+
+    return {
+        { A, C, X },
+        { B, D, Y },
+    }
+end
+
+local function ReadPosition(child)
+    local RelativeTransform = ReadRelativeTransform(child)
+
+    if type(RelativeTransform) == "table" then
+        local Row1 = RelativeTransform[1]
+        local Row2 = RelativeTransform[2]
+
+        if type(Row1) == "table" and type(Row2) == "table" then
+            local X = tonumber(Row1[3])
+            local Y = tonumber(Row2[3])
+
+            if X ~= nil and Y ~= nil then
+                return X, Y, "relativeTransform"
+            end
+        end
+    end
+
+    return child.x, child.y, "legacyXY"
+end
+
+local function ReadRotation(child)
+    local RelativeTransform = ReadRelativeTransform(child)
+
+    if type(RelativeTransform) == "table" then
+        local Row1 = RelativeTransform[1]
+        local Row2 = RelativeTransform[2]
+
+        if type(Row1) == "table" and type(Row2) == "table" then
+            local A = tonumber(Row1[1])
+            local C = tonumber(Row2[1])
+
+            if A ~= nil and C ~= nil then
+                return -math.deg(math.atan2(C, A))
+            end
+        end
+    end
+
+    return -(child.rotation or 0)
+end
+
 local function ReadRecursive(parentTable, mode)
     local ChildTable = {
         Root = {},
     }
 
     for Index, Child in ipairs(parentTable) do
+        local PositionX, PositionY, PositionSource = ReadPosition(Child)
+        local Rotation = ReadRotation(Child)
+        local RelativeTransform = ReadRelativeTransform(Child)
         local Opacity, Color = GetOpacityAndColor(Child)
         local StrokeColor = GetStrokeColor(Child)
 
@@ -197,11 +271,14 @@ local function ReadRecursive(parentTable, mode)
             },
     
             Position = {
-                X = Child.x,
-                Y = Child.y,
+                X = PositionX,
+                Y = PositionY,
             },
 
-            Rotation = -(Child.rotation or 0),
+            PositionSource = PositionSource,
+            RelativeTransform = RelativeTransform,
+
+            Rotation = Rotation,
 
             LayoutOrder = Index,
     

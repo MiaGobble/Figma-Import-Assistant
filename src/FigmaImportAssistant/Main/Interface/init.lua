@@ -128,11 +128,8 @@ local function BuildInterface()
 
     Builders.BuildSection(Scope, Seam, Jian, "Settings", {
         Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildCheckbox(Scope, Jian, "Aspect Ratio Constraint", IsAnyUIObjectElementEnabled, SettingValues.KeepAspectRatio, UDim2.fromScale(0.95, 1)),
-        }, 22),
-
-        Builders.BuildRow(Scope, Seam, Jian, {
-            Builders.BuildCheckbox(Scope, Jian, "Clip Descendants", IsAnyUIObjectElementEnabled, SettingValues.ClipDescendants, UDim2.fromScale(0.95, 1)),
+            Builders.BuildCheckbox(Scope, Jian, "Aspect Ratio Constraint", IsAnyUIObjectElementEnabled, SettingValues.KeepAspectRatio, UDim2.fromScale(0.45, 1)),
+            Builders.BuildCheckbox(Scope, Jian, "Clip Descendants", IsAnyUIObjectElementEnabled, SettingValues.ClipDescendants, UDim2.fromScale(0.45, 1)),
         }, 22),
     }, ScrollingList, true)
 
@@ -240,6 +237,12 @@ local function BuildInterface()
         Interactable = IsAutoImportElementEnabled,
 
         [Seam.Children] = {
+            Scope:New("UIPadding", {
+                PaddingTop = UDim.new(0, 4),
+                PaddingBottom = UDim.new(0, 4),
+                PaddingLeft = UDim.new(0, 6),
+                PaddingRight = UDim.new(0, 6),
+            }),
             Scope:New("UICorner", {
                 CornerRadius = UDim.new(0, 6),
             }),
