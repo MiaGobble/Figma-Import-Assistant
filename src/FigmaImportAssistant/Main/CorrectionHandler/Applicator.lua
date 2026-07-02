@@ -25,21 +25,6 @@ local function ToNumber(value, fallback)
     return Number
 end
 
-local function RotateVector(vector : Vector2, rotationDegrees : number)
-    if rotationDegrees == 0 then
-        return vector
-    end
-
-    local radians = math.rad(rotationDegrees)
-    local cosTheta = math.cos(radians)
-    local sinTheta = math.sin(radians)
-
-    return Vector2.new(
-        vector.X * cosTheta - vector.Y * sinTheta,
-        vector.X * sinTheta + vector.Y * cosTheta
-    )
-end
-
 local function ReadRelativeTransformComponents(data)
     local RelativeTransform = data.RelativeTransform
 
@@ -56,14 +41,32 @@ local function ReadRelativeTransformComponents(data)
 
     local A = tonumber(Row1[1])
     local C = tonumber(Row1[2])
+    local X = tonumber(Row1[3])
     local B = tonumber(Row2[1])
     local D = tonumber(Row2[2])
+    local Y = tonumber(Row2[3])
 
-    if A == nil or B == nil or C == nil or D == nil then
+    if A == nil or B == nil or C == nil or D == nil or X == nil or Y == nil then
         return nil
     end
 
-    return A, B, C, D
+    return A, B, C, D, X, Y
+end
+
+local function RotateVector(vector : Vector2, rotationDegrees : number)
+    if rotationDegrees == 0 then
+        return vector
+    end
+
+    local radians = math.rad(rotationDegrees)
+    local cosTheta = math.cos(radians)
+    local sinTheta = math.sin(radians)
+
+    -- Roblox GUI uses a Y-down screen space with clockwise-positive rotation.
+    return Vector2.new(
+        vector.X * cosTheta + vector.Y * sinTheta,
+        -vector.X * sinTheta + vector.Y * cosTheta
+    )
 end
 
 local function EnsureAspectRatioConstraint(selectedInstance : Instance, enabled : boolean, aspectRatio : number)
@@ -158,8 +161,6 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
     local ShadowOffsetFinal = ShadowOffsettedSize -- ShadowOffset / 2 + ShadowOffsettedSize
     local CorrectedSize = Size + Vector2.new(Stroke * 2, Stroke * 2) + ShadowOffsettedSize * 2 + ShadowOffset
     local CorrectedPosition = Position - Vector2.new(Stroke, Stroke) - ShadowOffsetFinal + ShadowOffset / 2
-    local FinalSize = CorrectedSize
-    local FinalPosition = CorrectedPosition
     
 
     Seam.New(selectedInstance, {
@@ -170,37 +171,43 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
         [Seam.Attribute("FigmaShadowSpread")] = data.Shadow and data.Shadow.Spread or 0,
     })
 
-    if selectedInstance.Parent:GetAttribute("FigmaStrokeThickness") then
-        local ParentStrokeOffset = selectedInstance.Parent:GetAttribute("FigmaStrokeThickness") - Stroke
-        FinalSize -= Vector2.new(ParentStrokeOffset, ParentStrokeOffset) * 2
-        FinalPosition += Vector2.new(ParentStrokeOffset, ParentStrokeOffset)
-    end
-
     local UsesLegacyXYPosition = data.PositionSource ~= "relativeTransform"
+    local GeometrySize = Size
+    local GeometryPosition = Position
 
-    if UsesLegacyXYPosition and selectedInstance.Parent:GetAttribute("IsFigmaImportGroup") then
-        FinalPosition -= selectedInstance.Parent:GetAttribute("FigmaPosition")
+    if UsesLegacyXYPosition then
+        GeometrySize = CorrectedSize
+        GeometryPosition = CorrectedPosition
+
+        if selectedInstance.Parent:GetAttribute("FigmaStrokeThickness") then
+            local ParentStrokeOffset = selectedInstance.Parent:GetAttribute("FigmaStrokeThickness") - Stroke
+            GeometrySize -= Vector2.new(ParentStrokeOffset, ParentStrokeOffset) * 2
+            GeometryPosition += Vector2.new(ParentStrokeOffset, ParentStrokeOffset)
+        end
+
+        if selectedInstance.Parent:GetAttribute("IsFigmaImportGroup") then
+            GeometryPosition -= selectedInstance.Parent:GetAttribute("FigmaPosition")
+        end
     end
 
     local Rotation = ToNumber(data.Rotation, selectedInstance.Rotation)
     local FinalPositionWithAnchor = nil
-    local A, B, C, D = ReadRelativeTransformComponents(data)
+    local A, B, C, D, X, Y = ReadRelativeTransformComponents(data)
 
     if data.PositionSource == "relativeTransform" and A ~= nil then
-        local AnchorLocal = Vector2.new(FinalSize.X * AnchorPoint.X, FinalSize.Y * AnchorPoint.Y)
+        local AnchorOffsetPixels = Vector2.new(GeometrySize.X * AnchorPoint.X, GeometrySize.Y * AnchorPoint.Y)
 
         FinalPositionWithAnchor = Vector2.new(
-            FinalPosition.X + A * AnchorLocal.X + C * AnchorLocal.Y,
-            FinalPosition.Y + B * AnchorLocal.X + D * AnchorLocal.Y
+            X + A * AnchorOffsetPixels.X + C * AnchorOffsetPixels.Y,
+            Y + B * AnchorOffsetPixels.X + D * AnchorOffsetPixels.Y
         )
     else
-        local AnchorOffsetPixels = Vector2.new(FinalSize.X * AnchorPoint.X, FinalSize.Y * AnchorPoint.Y)
-        local RotatedAnchorOffsetPixels = RotateVector(AnchorOffsetPixels, Rotation)
-        FinalPositionWithAnchor = FinalPosition + RotatedAnchorOffsetPixels
+        local AnchorOffsetPixels = Vector2.new(GeometrySize.X * AnchorPoint.X, GeometrySize.Y * AnchorPoint.Y)
+        FinalPositionWithAnchor = GeometryPosition + RotateVector(AnchorOffsetPixels, Rotation)
     end
 
     local ParentContextSize = GetContextualParentSizeForChild(selectedInstance)
-    local ScaledSize = UDim2.fromScale(FinalSize.X / ParentContextSize.X, FinalSize.Y / ParentContextSize.Y)
+    local ScaledSize = UDim2.fromScale(GeometrySize.X / ParentContextSize.X, GeometrySize.Y / ParentContextSize.Y)
     local ScaledPosition = Utility.ConvertToContextualScale(selectedInstance, FinalPositionWithAnchor)
     
     Seam.New(selectedInstance, {
@@ -213,7 +220,7 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
         Rotation = Rotation,
     })
 
-    local AspectRatio = if CorrectedSize.Y ~= 0 then CorrectedSize.X / CorrectedSize.Y else 1
+    local AspectRatio = if GeometrySize.Y ~= 0 then GeometrySize.X / GeometrySize.Y else 1
     
     EnsureAspectRatioConstraint(
         selectedInstance,
