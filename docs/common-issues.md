@@ -33,5 +33,12 @@ Sometimes with automatic (or sometimes manual) importing, you might have issues 
 
 **Solution**: Use import tags. See [Auto Importing](./auto-importing.md) for more info.
 
+## Rotated Elements Don't Import Correctly
+**Problem**: Rotated elements in Figma import with weird positions in Roblox studio.
+
+**Reason**: Figma handles rotation differently than Roblox Studio, and does not correctly export the data needed to fix this issue.
+
+**Solution**: When importing, import with the middle anchor as default. 
+
 # Issue Not Here?
 If you don't see your issue here, it may be a bug. Please report it.
