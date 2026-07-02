@@ -40,6 +40,32 @@ local function RotateVector(vector : Vector2, rotationDegrees : number)
     )
 end
 
+local function ReadRelativeTransformComponents(data)
+    local RelativeTransform = data.RelativeTransform
+
+    if type(RelativeTransform) ~= "table" then
+        return nil
+    end
+
+    local Row1 = RelativeTransform[1]
+    local Row2 = RelativeTransform[2]
+
+    if type(Row1) ~= "table" or type(Row2) ~= "table" then
+        return nil
+    end
+
+    local A = tonumber(Row1[1])
+    local C = tonumber(Row1[2])
+    local B = tonumber(Row2[1])
+    local D = tonumber(Row2[2])
+
+    if A == nil or B == nil or C == nil or D == nil then
+        return nil
+    end
+
+    return A, B, C, D
+end
+
 local function EnsureAspectRatioConstraint(selectedInstance : Instance, enabled : boolean, aspectRatio : number)
     local Existing = selectedInstance:FindFirstChildOfClass("UIAspectRatioConstraint")
 
@@ -150,14 +176,28 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
         FinalPosition += Vector2.new(ParentStrokeOffset, ParentStrokeOffset)
     end
 
-    if selectedInstance.Parent:GetAttribute("IsFigmaImportGroup") then
+    local UsesLegacyXYPosition = data.PositionSource ~= "relativeTransform"
+
+    if UsesLegacyXYPosition and selectedInstance.Parent:GetAttribute("IsFigmaImportGroup") then
         FinalPosition -= selectedInstance.Parent:GetAttribute("FigmaPosition")
     end
 
     local Rotation = ToNumber(data.Rotation, selectedInstance.Rotation)
-    local AnchorOffsetPixels = Vector2.new(FinalSize.X * AnchorPoint.X, FinalSize.Y * AnchorPoint.Y)
-    local RotatedAnchorOffsetPixels = RotateVector(AnchorOffsetPixels, Rotation)
-    local FinalPositionWithAnchor = FinalPosition + RotatedAnchorOffsetPixels
+    local FinalPositionWithAnchor = nil
+    local A, B, C, D = ReadRelativeTransformComponents(data)
+
+    if data.PositionSource == "relativeTransform" and A ~= nil then
+        local AnchorLocal = Vector2.new(FinalSize.X * AnchorPoint.X, FinalSize.Y * AnchorPoint.Y)
+
+        FinalPositionWithAnchor = Vector2.new(
+            FinalPosition.X + A * AnchorLocal.X + C * AnchorLocal.Y,
+            FinalPosition.Y + B * AnchorLocal.X + D * AnchorLocal.Y
+        )
+    else
+        local AnchorOffsetPixels = Vector2.new(FinalSize.X * AnchorPoint.X, FinalSize.Y * AnchorPoint.Y)
+        local RotatedAnchorOffsetPixels = RotateVector(AnchorOffsetPixels, Rotation)
+        FinalPositionWithAnchor = FinalPosition + RotatedAnchorOffsetPixels
+    end
 
     local ParentContextSize = GetContextualParentSizeForChild(selectedInstance)
     local ScaledSize = UDim2.fromScale(FinalSize.X / ParentContextSize.X, FinalSize.Y / ParentContextSize.Y)

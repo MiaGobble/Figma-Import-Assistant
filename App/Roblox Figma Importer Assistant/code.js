@@ -114,6 +114,34 @@ function autoLayoutPropsForNode(node) {
     };
 }
 
+function relativeTransformForNode(node) {
+    if (!("relativeTransform" in node)) {
+        return null;
+    }
+
+    const matrix = node.relativeTransform;
+
+    if (!Array.isArray(matrix) || matrix.length < 2) {
+        return null;
+    }
+
+    const row1 = Array.isArray(matrix[0]) ? matrix[0] : [];
+    const row2 = Array.isArray(matrix[1]) ? matrix[1] : [];
+
+    return [
+        [
+            safeNumber(row1[0], 1),
+            safeNumber(row1[1], 0),
+            safeNumber(row1[2], safeNumber(node.x, 0)),
+        ],
+        [
+            safeNumber(row2[0], 0),
+            safeNumber(row2[1], 1),
+            safeNumber(row2[2], safeNumber(node.y, 0)),
+        ],
+    ];
+}
+
 async function readNode(node, mode) {
     if (!("opacity" in node || "fills" in node || "children" in node)) {
         return null;
@@ -133,6 +161,7 @@ async function readNode(node, mode) {
         height: safeNumber(node.height, 0),
         x: safeNumber(node.x, 0),
         y: safeNumber(node.y, 0),
+        relativeTransform: relativeTransformForNode(node),
         strokeWeight: safeNumber(node.strokeWeight, 0),
         opacity: safeNumber(node.opacity, 1),
         rotation: safeNumber(node.rotation, 0),
