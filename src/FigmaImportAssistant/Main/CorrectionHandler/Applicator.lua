@@ -25,6 +25,21 @@ local function ToNumber(value, fallback)
     return Number
 end
 
+local function RotateVector(vector : Vector2, rotationDegrees : number)
+    if rotationDegrees == 0 then
+        return vector
+    end
+
+    local radians = math.rad(rotationDegrees)
+    local cosTheta = math.cos(radians)
+    local sinTheta = math.sin(radians)
+
+    return Vector2.new(
+        vector.X * cosTheta - vector.Y * sinTheta,
+        vector.X * sinTheta + vector.Y * cosTheta
+    )
+end
+
 local function EnsureAspectRatioConstraint(selectedInstance : Instance, enabled : boolean, aspectRatio : number)
     local Existing = selectedInstance:FindFirstChildOfClass("UIAspectRatioConstraint")
 
@@ -139,11 +154,14 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
         FinalPosition -= selectedInstance.Parent:GetAttribute("FigmaPosition")
     end
 
+    local Rotation = ToNumber(data.Rotation, selectedInstance.Rotation)
+    local AnchorOffsetPixels = Vector2.new(FinalSize.X * AnchorPoint.X, FinalSize.Y * AnchorPoint.Y)
+    local RotatedAnchorOffsetPixels = RotateVector(AnchorOffsetPixels, Rotation)
+    local FinalPositionWithAnchor = FinalPosition + RotatedAnchorOffsetPixels
+
     local ParentContextSize = GetContextualParentSizeForChild(selectedInstance)
     local ScaledSize = UDim2.fromScale(FinalSize.X / ParentContextSize.X, FinalSize.Y / ParentContextSize.Y)
-    local ScaledPosition = Utility.ConvertToContextualScale(selectedInstance, FinalPosition)
-            
-    ScaledPosition += UDim2.fromScale(ScaledSize.X.Scale * AnchorPoint.X, ScaledSize.Y.Scale * AnchorPoint.Y)
+    local ScaledPosition = Utility.ConvertToContextualScale(selectedInstance, FinalPositionWithAnchor)
     
     Seam.New(selectedInstance, {
         ClipsDescendants = data.Settings and data.Settings.ClipDescendants ~= nil and data.Settings.ClipDescendants or selectedInstance.ClipsDescendants,
@@ -152,7 +170,7 @@ function Applicator:ApplyChangesFromData(selectedInstance : Instance, data : {[s
         Position = ScaledPosition,
         Name = data.Name or selectedInstance.Name,
         AnchorPoint = AnchorPoint,
-        Rotation = ToNumber(data.Rotation, selectedInstance.Rotation),
+        Rotation = Rotation,
     })
 
     local AspectRatio = if CorrectedSize.Y ~= 0 then CorrectedSize.X / CorrectedSize.Y else 1
