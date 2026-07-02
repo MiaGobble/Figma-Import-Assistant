@@ -240,6 +240,12 @@ local function BuildInterface()
         Interactable = IsAutoImportElementEnabled,
 
         [Seam.Children] = {
+            Scope:New("UIPadding", {
+                PaddingTop = UDim.new(0, 4),
+                PaddingBottom = UDim.new(0, 4),
+                PaddingLeft = UDim.new(0, 6),
+                PaddingRight = UDim.new(0, 6),
+            }),
             Scope:New("UICorner", {
                 CornerRadius = UDim.new(0, 6),
             }),
