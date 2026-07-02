@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[841],{2913:e=>{e.exports=JSON.parse('{"functions":[],"properties":[],"types":[],"name":"Applicator","desc":"Applies interpreted Figma geometry and styling to Roblox GuiObjects.","source":{"line":5,"path":"src/FigmaImportAssistant/Main/CorrectionHandler/Applicator.lua"}}')}}]);
